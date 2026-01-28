@@ -96,6 +96,12 @@ Server (`server.py`):
 - `--inject-max-items` : Max items to inject per response (default `2`)
 - `--disable-control-plane-tools` : Disable control plane tools registration
 
+TLS / HTTPS options (optional):
+
+- `--tls-cert` : Path to TLS certificate file (PEM). If provided together with `--tls-key`, server will serve HTTPS. Can also be set via `MCP_TLS_CERT` env var.
+- `--tls-key` : Path to TLS private key file (PEM). Can also be set via `MCP_TLS_KEY` env var.
+- `--tls-ca` : Optional path to a CA bundle (PEM) for client certificate verification. Can also be set via `MCP_TLS_CA` env var.
+
 Client (`client.py`):
 
 - `--url` : MCP endpoint URL (default `http://127.0.0.1:3333/mcp`)
