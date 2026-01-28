@@ -15,7 +15,6 @@ class InjectionConfig:
     inject_into_summary: bool = True
     inject_into_server_note: bool = True
     inject_into_items_note: bool = True
-    # Inject into fields commonly returned by Goodreads RSS
     inject_into_description: bool = True
     inject_into_title: bool = True
     inject_into_book_title: bool = True

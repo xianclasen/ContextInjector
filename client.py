@@ -6,7 +6,6 @@ from typing import Any, Dict, Optional
 import httpx
 import logging
 
-# Use the shared logging setup (supports LOG_FORMAT / LOG_COLOR)
 from logutils.formatters import setup_logging
 
 
@@ -32,7 +31,6 @@ def _summarize_response(resp: Dict[str, Any]) -> str:
     if "result" in resp:
         r = resp["result"]
         if isinstance(r, dict):
-            # common shapes: tools list, items, simple status objects
             if "tools" in r and isinstance(r["tools"], list):
                 names = [
                     t.get("name")
@@ -42,18 +40,15 @@ def _summarize_response(resp: Dict[str, Any]) -> str:
                 return f"tools: {len(names)} available ({', '.join(names[:8])}{'…' if len(names) > 8 else ''})"
             if "items" in r and isinstance(r["items"], list):
                 return f"items: {len(r['items'])}"
-            # fall back to summarizing top-level keys
             parts = []
             for k, v in list(r.items())[:6]:
                 vs = _truncate(str(v), 120).replace("\n", " ")
                 parts.append(f"{k}={vs}")
             return ", ".join(parts) if parts else "(empty result)"
-        # non-dict result (string/number/array)
         if isinstance(r, list):
             return f"result: list[{len(r)}]"
         return _truncate(str(r), 200)
 
-    # fallback
     return _truncate(json.dumps(resp, separators=(",", ":"), ensure_ascii=False), 400)
 
 
@@ -77,16 +72,13 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         if not isinstance(it, dict):
             continue
 
-        # Check explicit server_note metadata added by the attack injector
         note = it.get("server_note")
         if isinstance(note, dict):
             meta = note.get("meta") or {}
             if meta.get("attack_request_id") or note.get("note", "").startswith("ATTACK_SIMULATION"):
-                # If the server provided injected_fields metadata, preserve it
                 injected.append((idx, it, meta))
                 continue
 
-        # Fallback: look for injected markers in common text fields
         fields_found: list[str] = []
         for key in ("summary", "description", "title", "book_title", "author", "author_name"):
             v = it.get(key)
@@ -102,11 +94,8 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     logger = logging.getLogger("mcp_client")
     logger.info("Injected items detected:")
     for idx, it, meta in injected:
-        # Prefer `book_title` then `title` for display
         title = it.get("book_title") or it.get("title") or "(no title)"
-        # Shorten long titles for readability
         short = _truncate(str(title), 200).replace("\n", " ")
-        # Prefer server-provided metadata when available
         if meta and meta.get("attack_request_id"):
             fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
@@ -182,12 +171,10 @@ class McpHttpClient:
     def _decode(self, resp: httpx.Response, method: str) -> Dict[str, Any]:
         ct = (resp.headers.get("content-type") or "").lower()
 
-        # capture session id if present
         sid = resp.headers.get("mcp-session-id") or resp.headers.get("Mcp-Session-Id")
         if sid and not self.session_id:
             self.session_id = sid
 
-        # handle http errors: try json-rpc first
         if resp.status_code >= 400:
             text = resp.text
             if "application/json" in ct:
@@ -246,7 +233,6 @@ class McpHttpClient:
                 f"[HTTP ERROR] HTTP {resp.status_code} method={method}\nBody:\n{_truncate(resp.text)}"
             )
 
-    # Initialize the MCP session
     def initialize(self) -> Dict[str, Any]:
         msg = self.call(
             "initialize",
@@ -260,15 +246,12 @@ class McpHttpClient:
             raise McpGatewayError(
                 "Initialize succeeded but no Mcp-Session-Id header was provided."
             )
-        # Send notifications/initialized as a JSON-RPC notification (no id)
         self.notify("notifications/initialized", {})
         return msg
 
-    # List available tools
     def list_tools(self) -> Dict[str, Any]:
         return self.call("tools/list", {})
 
-    # Call a tool
     def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return self.call("tools/call", {"name": name, "arguments": arguments})
 
@@ -282,7 +265,6 @@ def main() -> None:
     ap.add_argument("--timeout", type=float, default=20.0)
     ap.add_argument("--insecure", action="store_true", help="Disable TLS verification")
 
-    # Mode selection: normal (legit) or attack
     ap.add_argument(
         "--attack",
         action="store_true",
@@ -294,7 +276,6 @@ def main() -> None:
         help="Attack profile to set when --attack is used",
     )
 
-    # Tool selection: simple defaults for Goodreads shelf fetching, with small helpers
     ap.add_argument("--tool", default="fetch_shelf_rss", help="Tool name to call")
     ap.add_argument("--shelf", default="read", help="Shelf name for default tool args")
     ap.add_argument("--limit", type=int, default=20, help="Limit for default tool args")
@@ -305,7 +286,6 @@ def main() -> None:
 
     args = ap.parse_args()
 
-    # Configure logging for the client (respects LOG_FORMAT / LOG_COLOR)
     setup_logging("mcp_client")
     logger = logging.getLogger("mcp_client")
 
@@ -318,7 +298,6 @@ def main() -> None:
         c.initialize()
         logger.info("Session: %s", c.session_id)
 
-        # Lightweight tools listing for visibility
         logger.info("Listing tools…")
         try:
             tools = c.list_tools()
@@ -327,7 +306,6 @@ def main() -> None:
         except McpGatewayError:
             logger.warning("tools/list failed or blocked — continuing")
 
-        # If attack mode selected, attempt to set the attack profile
         if args.attack:
             logger.info("Setting attack profile: %s", args.profile)
             try:
@@ -337,7 +315,6 @@ def main() -> None:
             except McpGatewayError:
                 logger.warning("set_attack_profile failed or not exposed — continuing")
 
-        # Build tool arguments
         if args.tool_args:
             tool_args = json.loads(args.tool_args)
         else:
@@ -347,7 +324,6 @@ def main() -> None:
         res = c.call_tool(args.tool, tool_args)
         logger.info("tools/call ok")
         logger.info(_summarize_response(res))
-        # Report which Goodreads entries (if any) appear to have been injected
         _report_injected_items(res)
 
     except McpGatewayError as e:

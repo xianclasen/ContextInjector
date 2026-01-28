@@ -30,9 +30,7 @@ def _normalize_ws(s: str) -> str:
 def _clean_text(s: Optional[str]) -> str:
     if not s:
         return ""
-    # Goodreads RSS sometimes contains HTML entities or HTML fragments
     s = html.unescape(s)
-    # Strip HTML tags
     s = re.sub(r"<[^>]+>", "", s)
     return _normalize_ws(s)
 
@@ -54,7 +52,6 @@ def _parse_rfc822_dt(s: Optional[str]) -> Optional[str]:
 
 
 def _localname(tag: str) -> str:
-    # '{ns}name' -> 'name'
     if "}" in tag:
         return tag.split("}", 1)[1]
     return tag
@@ -94,7 +91,6 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
 
     root = ET.fromstring(xml_text)
 
-    # RSS root: <rss><channel>...</channel></rss>
     channel = None
     if _localname(root.tag) == "rss":
         for child in root:
@@ -102,13 +98,11 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
                 channel = child
                 break
     if channel is None:
-        # Some feeds can have different wrappers; try to find channel anywhere
         channel = root.find(".//channel")
 
     if channel is None:
         raise RuntimeError("Invalid RSS: could not find <channel>")
 
-    # Channel metadata
     channel_meta: Dict[str, Any] = {}
     for ch in channel:
         ln = _localname(ch.tag)
@@ -118,22 +112,18 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
     items: List[Dict[str, Any]] = []
     for it in channel.findall("item"):
         data: Dict[str, Any] = {}
-        # Extract known fields from standard RSS tags and Goodreads extensions
         tmp: Dict[str, str] = {}
         for child in it:
             ln = _localname(child.tag)
             txt = child.text or ""
             tmp[ln] = txt
 
-        # Standard-ish fields
         data["guid"] = _clean_text(tmp.get("guid"))
         data["link"] = _clean_text(tmp.get("link"))
         data["pubDate"] = _parse_rfc822_dt(tmp.get("pubDate"))
         data["title_raw"] = _clean_text(tmp.get("title"))
         data["description"] = _clean_text(tmp.get("description"))
 
-        # Goodreads extension fields (commonly present)
-        # Names vary a bit; we try a few.
         data["book_id"] = _clean_text(tmp.get("book_id") or tmp.get("bookid"))
         data["book_title"] = _clean_text(tmp.get("book_title") or tmp.get("booktitle"))
         data["author_name"] = _clean_text(
@@ -142,8 +132,6 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
         data["user_date_added"] = _clean_text(tmp.get("user_date_added"))
         data["user_date_updated"] = _clean_text(tmp.get("user_date_updated"))
 
-        # Best-effort: If Goodreads doesn’t provide book_title/author_name in extensions,
-        # parse from RSS <title> which often looks like "Title by Author".
         title = data["book_title"] or data["title_raw"]
         author = data["author_name"]
         if not author and data["title_raw"]:
@@ -155,7 +143,6 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
         data["title"] = title
         data["author"] = author
 
-        # A handy field for downstream inspection/injection points
         data["summary"] = data["description"] or ""
 
         items.append(data)

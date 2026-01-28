@@ -9,13 +9,13 @@ The project includes both a client and server. Attack type can be selected at ei
 
 ## Purpose
 
-This project is a small demonstration of an MCP-based service that fetches and exposes book-related data (via RSS/Goodreads integration), includes logging and middleware, and contains examples of attack vectors.
+This project is a small demonstration of an MCP-based service that fetches and exposes book-related data (via RSS/Goodreads integration), includes logging, and contains examples of attack vectors.
 
 ## Features
 
 - MCP server and client example interfaces
 - Goodreads/RSS fetching utilities
-- Logging and middleware examples
+- Logging examples
 - Attack demonstration modules (injection control)
 
 ## Prerequisites
@@ -80,7 +80,7 @@ python server.py
 python client.py
 ```
 
-Explore the `attacks/`, `models/`, `feeds/`, and `logging/` packages to see example components and demonstration code.
+Explore the `attacks/` and `models/` packages to see example components and demonstration code.
 
 ## Command-line arguments
 
@@ -98,9 +98,10 @@ Server (`server.py`):
 
 TLS / HTTPS options (optional):
 
-- `--tls-cert` : Path to TLS certificate file (PEM). If provided together with `--tls-key`, server will serve HTTPS. Can also be set via `MCP_TLS_CERT` env var.
-- `--tls-key` : Path to TLS private key file (PEM). Can also be set via `MCP_TLS_KEY` env var.
-- `--tls-ca` : Optional path to a CA bundle (PEM) for client certificate verification. Can also be set via `MCP_TLS_CA` env var.
+- `--https` : Enable HTTPS with the provided cert and key
+- `--cert` : Path to TLS certificate file (PEM). Can also be set via `TLS_CERT`.
+- `--key` : Path to TLS private key file (PEM). Can also be set via `TLS_KEY`.
+- `--client-ca` : Optional CA bundle (PEM) for client cert verification. Can also be set via `TLS_CLIENT_CA`.
 
 Client (`client.py`):
 
@@ -120,8 +121,6 @@ Client (`client.py`):
 - `server.py` — example MCP server entrypoint
 - `client.py` — simple client/demo runner
 - `models/` — application models and clients
-- `feeds/` — RSS parsing utilities
 - `attacks/` — attack modules (e.g. injection)
-- `logging/`, `logutils/` — logging formatters and middleware
-- `tools/`, `utils/` — helper scripts and utilities
-
+- `logutils/` — logging formatters
+- `tools/` — tool implementations

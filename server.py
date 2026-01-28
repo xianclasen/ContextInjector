@@ -12,7 +12,6 @@ from dotenv import load_dotenv
 import uvicorn
 import logging
 
-# Use the project's logging setup (logutils.formatters.py)
 from logutils.formatters import setup_logging
 
 
@@ -48,13 +47,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--port", type=int, default=int(os.getenv("MCP_PORT", "3333")))
     p.add_argument("--path", default=os.getenv("MCP_HTTP_PATH", "/mcp"))
 
-    # TLS / HTTPS options
     p.add_argument("--https", action="store_true", help="Serve HTTPS using cert/key")
     p.add_argument("--cert", default=os.getenv("TLS_CERT", "certs/fullchain.pem"))
     p.add_argument("--key", default=os.getenv("TLS_KEY", "certs/privkey.pem"))
     p.add_argument("--client-ca", default=os.getenv("TLS_CLIENT_CA"))
 
-    # Mirror client-style attack flags: --attack enables injection, --profile selects profile
     p.add_argument(
         "--attack",
         action="store_true",
@@ -62,7 +59,6 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--profile", default=os.getenv("ATTACK_PROFILE", "prompt_injection"))
 
-    # Backwards-compatible fine-grained injection flags
     p.add_argument(
         "--inject", action="store_true", default=os.getenv("ATTACK_INJECT", "1") == "1"
     )
@@ -89,10 +85,8 @@ def main() -> None:
         enable_control_plane_tools=not args.disable_control_plane_tools
     )
 
-    # Select profile (client/server use same flag name `--profile`)
     state.attack_controller.set_profile(args.profile)
 
-    # Determine whether injection is enabled. Precedence: --no-inject (highest), --attack, --inject
     if args.no_inject:
         state.inj_cfg.enabled = False
     else:
@@ -104,11 +98,9 @@ def main() -> None:
     )
     state.inj_cfg.max_items_to_inject = max(0, int(args.inject_max_items))
 
-    # Configure logging to emit JSON logs to stdout so injection events appear
     setup_logging("goodreads_mcp.mcp")
     logger = logging.getLogger("goodreads_mcp.mcp")
 
-    # Log the effective attack/injection configuration at startup
     logger.info(
         "attack/startup",
         extra={
@@ -128,9 +120,6 @@ def main() -> None:
     )
 
     app = mcp.http_app(path=args.path)
-    # (request-logging middleware removed)
-
-    # uvicorn config
     uvicorn_kwargs = {"host": args.host, "port": args.port}
 
     if args.https:
