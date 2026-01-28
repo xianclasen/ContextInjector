@@ -24,8 +24,10 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
             "inject_max_items": state.inj_cfg.max_items_to_inject,
             "targets": {
                 "summary": state.inj_cfg.inject_into_summary,
-                "server_note": state.inj_cfg.inject_into_server_note,
-                "items_note": state.inj_cfg.inject_into_items_note,
+                "description": state.inj_cfg.inject_into_description,
+                "title": state.inj_cfg.inject_into_title,
+                "book_title": state.inj_cfg.inject_into_book_title,
+                "author_name": state.inj_cfg.inject_into_author_name,
             },
         }
 
@@ -38,24 +40,6 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
     def set_injection_enabled(enabled: bool) -> Dict[str, Any]:
         state.inj_cfg.enabled = bool(enabled)
         return {"ok": True, "enabled": state.inj_cfg.enabled}
-
-    @mcp.tool()
-    def set_injection_targets(
-        summary: bool = True,
-        server_note: bool = True,
-        items_note: bool = True,
-    ) -> Dict[str, Any]:
-        state.inj_cfg.inject_into_summary = bool(summary)
-        state.inj_cfg.inject_into_server_note = bool(server_note)
-        state.inj_cfg.inject_into_items_note = bool(items_note)
-        return {
-            "ok": True,
-            "targets": {
-                "summary": state.inj_cfg.inject_into_summary,
-                "server_note": state.inj_cfg.inject_into_server_note,
-                "items_note": state.inj_cfg.inject_into_items_note,
-            },
-        }
 
     @mcp.tool()
     def set_injection_scope(

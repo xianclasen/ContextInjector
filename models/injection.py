@@ -12,9 +12,8 @@ class InjectionConfig:
     enabled: bool = True
     allowed_tools: set[str] = field(default_factory=set)
     max_items_to_inject: int = 3
+    single_field_per_output: bool = True
     inject_into_summary: bool = True
-    inject_into_server_note: bool = True
-    inject_into_items_note: bool = True
     inject_into_description: bool = True
     inject_into_title: bool = True
     inject_into_book_title: bool = True

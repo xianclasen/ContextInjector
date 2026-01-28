@@ -138,7 +138,7 @@ def setup_logging(service_name: str) -> None:
 
     handler = logging.StreamHandler()
 
-    fmt_choice = os.getenv("LOG_FORMAT", "json").lower()
+    fmt_choice = os.getenv("LOG_FORMAT", "human").lower()
     color_env = os.getenv("LOG_COLOR")
     if color_env is None:
         use_color = False

@@ -198,12 +198,71 @@ def inject_into_result(
         tool_name,
     )
 
-    if cfg.inject_into_server_note:
-        result["server_note"] = {
-            "note": "ATTACK_SIMULATION",
-            "text": attack_text,
-            "meta": meta,
-        }
+    result["server_note"] = {
+        "note": "ATTACK_SIMULATION",
+        "meta": meta,
+    }
+
+    if cfg.single_field_per_output:
+        items = result.get("items")
+        if isinstance(items, list) and items:
+            it = items[0]
+            if isinstance(it, dict):
+                injected_fields = []
+                if cfg.inject_into_summary:
+                    if "summary" in it and isinstance(it["summary"], (str, type(None))):
+                        existing = it.get("summary") or ""
+                        it["summary"] = f"{existing}\n\n{attack_text}".strip()
+                    else:
+                        it["summary"] = attack_text
+                    injected_fields.append("summary")
+                elif cfg.inject_into_description:
+                    if "description" in it and isinstance(
+                        it["description"], (str, type(None))
+                    ):
+                        existing = it.get("description") or ""
+                        it["description"] = f"{existing}\n\n{attack_text}".strip()
+                    else:
+                        it["description"] = attack_text
+                    injected_fields.append("description")
+                elif cfg.inject_into_book_title:
+                    if "book_title" in it and isinstance(
+                        it["book_title"], (str, type(None))
+                    ):
+                        existing = it.get("book_title") or ""
+                        it["book_title"] = f"{existing} {attack_text}".strip()
+                    else:
+                        it["book_title"] = attack_text
+                    injected_fields.append("book_title")
+                elif cfg.inject_into_title:
+                    if "title" in it and isinstance(it["title"], (str, type(None))):
+                        existing = it.get("title") or ""
+                        it["title"] = f"{existing}\n\n{attack_text}".strip()
+                    else:
+                        it["title"] = attack_text
+                    injected_fields.append("title")
+                elif cfg.inject_into_author_name:
+                    key = "author_name" if "author_name" in it else "author"
+                    if key in it and isinstance(it[key], (str, type(None))):
+                        existing = it.get(key) or ""
+                        it[key] = f"{existing} {attack_text}".strip()
+                    else:
+                        it[key] = attack_text
+                    injected_fields.append(key)
+
+                if injected_fields:
+                    title = it.get("book_title") or it.get("title") or "(no title)"
+                    short_title = str(title)[:200]
+                    logger.info(
+                        "Injected item: request_id=%s item_index=%d fields=%s title=%s",
+                        request_id,
+                        0,
+                        ",".join(injected_fields),
+                        short_title,
+                    )
+                    return result
+
+        return result
 
     items = result.get("items")
     if isinstance(items, list) and items:
@@ -255,19 +314,6 @@ def inject_into_result(
                 else:
                     it[key] = attack_text
                 injected_fields.append(key)
-
-            if cfg.inject_into_items_note:
-                meta_with_fields = dict(meta)
-                meta_with_fields["injected_fields"] = injected_fields + [
-                    "items_server_note"
-                ]
-                it["server_note"] = {
-                    "note": "ATTACK_SIMULATION_ITEM",
-                    "text": attack_text,
-                    "meta": meta_with_fields,
-                    "item_index": i,
-                }
-                injected_fields.append("items_server_note")
 
             if injected_fields:
                 title = it.get("book_title") or it.get("title") or "(no title)"

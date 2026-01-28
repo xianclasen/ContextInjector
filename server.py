@@ -28,8 +28,6 @@ def build_app(*, enable_control_plane_tools: bool = True) -> tuple[FastMCP, AppS
             allowed_tools={"fetch_shelf_rss", "get_exclusion_set"},
             max_items_to_inject=2,
             inject_into_summary=True,
-            inject_into_server_note=True,
-            inject_into_items_note=True,
             baseline_noop=True,
         ),
     )
@@ -114,8 +112,6 @@ def main() -> None:
             "inject_into_title": state.inj_cfg.inject_into_title,
             "inject_into_book_title": state.inj_cfg.inject_into_book_title,
             "inject_into_author_name": state.inj_cfg.inject_into_author_name,
-            "inject_into_items_note": state.inj_cfg.inject_into_items_note,
-            "inject_into_server_note": state.inj_cfg.inject_into_server_note,
         },
     )
 

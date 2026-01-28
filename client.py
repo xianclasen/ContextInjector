@@ -63,6 +63,18 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     r = resp.get("result")
     if not isinstance(r, dict):
         return
+
+    note = r.get("server_note")
+    if isinstance(note, dict):
+        meta = note.get("meta") or {}
+        profile = meta.get("attack_profile")
+        req_id = meta.get("attack_request_id")
+        if profile:
+            logger = logging.getLogger("mcp_client")
+            if req_id:
+                logger.info("Attack profile: %s (request=%s)", profile, req_id)
+            else:
+                logger.info("Attack profile: %s", profile)
     items = r.get("items")
     if not isinstance(items, list) or not items:
         return
