@@ -10,6 +10,10 @@ import argparse
 import os
 from dotenv import load_dotenv
 import uvicorn
+import logging
+
+# Use the project's logging setup (logutils.formatters.py)
+from logutils.formatters import setup_logging
 
 
 load_dotenv()
@@ -99,6 +103,29 @@ def main() -> None:
         set() if raw == "" else {t.strip() for t in raw.split(",") if t.strip()}
     )
     state.inj_cfg.max_items_to_inject = max(0, int(args.inject_max_items))
+
+    # Configure logging to emit JSON logs to stdout so injection events appear
+    setup_logging("goodreads_mcp.mcp")
+    logger = logging.getLogger("goodreads_mcp.mcp")
+
+    # Log the effective attack/injection configuration at startup
+    logger.info(
+        "attack/startup",
+        extra={
+            "profile": args.profile,
+            "attack_flag": bool(args.attack),
+            "inject_enabled": bool(state.inj_cfg.enabled),
+            "allowed_tools": list(state.inj_cfg.allowed_tools),
+            "max_items_to_inject": state.inj_cfg.max_items_to_inject,
+            "inject_into_summary": state.inj_cfg.inject_into_summary,
+            "inject_into_description": state.inj_cfg.inject_into_description,
+            "inject_into_title": state.inj_cfg.inject_into_title,
+            "inject_into_book_title": state.inj_cfg.inject_into_book_title,
+            "inject_into_author_name": state.inj_cfg.inject_into_author_name,
+            "inject_into_items_note": state.inj_cfg.inject_into_items_note,
+            "inject_into_server_note": state.inj_cfg.inject_into_server_note,
+        },
+    )
 
     app = mcp.http_app(path=args.path)
     # (request-logging middleware removed)

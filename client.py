@@ -78,18 +78,18 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         if isinstance(note, dict):
             meta = note.get("meta") or {}
             if meta.get("attack_request_id") or note.get("note", "").startswith("ATTACK_SIMULATION"):
+                # If the server provided injected_fields metadata, preserve it
                 injected.append((idx, it, meta))
                 continue
 
         # Fallback: look for injected markers in common text fields
-        marker_found = False
+        fields_found: list[str] = []
         for key in ("summary", "description", "title", "book_title", "author", "author_name"):
             v = it.get(key)
             if isinstance(v, str) and any(m in v for m in ("ATTACK_TEST", "ATTACK_SIMULATION", "OVERSIZED_PAYLOAD_TEST", "HIGH_ENTROPY_TEST")):
-                injected.append((idx, it, {}))
-                marker_found = True
-                break
-        if marker_found:
+                fields_found.append(key)
+        if fields_found:
+            injected.append((idx, it, {"injected_fields": fields_found}))
             continue
 
     if not injected:
@@ -101,10 +101,19 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         title = it.get("book_title") or it.get("title") or "(no title)"
         # Shorten long titles for readability
         short = _truncate(str(title), 200).replace("\n", " ")
+        # Prefer server-provided metadata when available
         if meta and meta.get("attack_request_id"):
-            print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')})")
+            fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
+            if fields:
+                print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')}) fields={','.join(fields)}")
+            else:
+                print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')})")
         else:
-            print(f" - item[{idx}]: {short}")
+            fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
+            if fields:
+                print(f" - item[{idx}]: {short}  (fields={','.join(fields)})")
+            else:
+                print(f" - item[{idx}]: {short}")
 
 
 class McpGatewayError(Exception):

@@ -135,13 +135,20 @@ def inject_into_result(
                 injected_fields.append(key)
 
             if cfg.inject_into_items_note:
-                it["server_note"] = {
-                    "note": "ATTACK_SIMULATION_ITEM",
-                    "text": attack_text,
-                    "meta": meta,
-                    "item_index": i,
-                }
-                injected_fields.append("items_server_note")
+                        # Include which fields were injected in the per-item meta so
+                        # clients can surface where the attack payload landed.
+                        meta_with_fields = dict(meta)
+                        # record the fields we injected (include this item note too)
+                        meta_with_fields["injected_fields"] = injected_fields + [
+                            "items_server_note"
+                        ]
+                        it["server_note"] = {
+                            "note": "ATTACK_SIMULATION_ITEM",
+                            "text": attack_text,
+                            "meta": meta_with_fields,
+                            "item_index": i,
+                        }
+                        injected_fields.append("items_server_note")
 
             # If we injected anything into this item, log a concise record
             if injected_fields:
