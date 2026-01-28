@@ -69,6 +69,7 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         return
 
     note = r.get("server_note")
+    meta = {}
     if isinstance(note, dict):
         meta = note.get("meta") or {}
         profile = meta.get("attack_profile")
@@ -151,6 +152,26 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
                 )
             else:
                 logger.info(" - item[%d]: %s payload=%s", idx, short, payload or "")
+
+    if not injected:
+        fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
+        item_index = meta.get("injected_item_index")
+        if fields and isinstance(item_index, int) and 0 <= item_index < len(items):
+            it = items[item_index]
+            if isinstance(it, dict):
+                payload = None
+                for key in fields:
+                    v = it.get(key)
+                    if isinstance(v, str):
+                        payload = _one_line(v)
+                        break
+                if payload:
+                    logger.info(
+                        "Injected items detected: item[%d] fields=%s payload=%s",
+                        item_index,
+                        ",".join(fields),
+                        payload,
+                    )
 
 
 class McpGatewayError(Exception):

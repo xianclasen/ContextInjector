@@ -256,6 +256,8 @@ def inject_into_result(
                     injected_fields.append(key)
 
                 if injected_fields:
+                    meta["injected_fields"] = list(injected_fields)
+                    meta["injected_item_index"] = 0
                     title = it.get("book_title") or it.get("title") or "(no title)"
                     short_title = str(title)[:200]
                     logger.info(
@@ -321,10 +323,12 @@ def inject_into_result(
                     it[key] = attack_text
                 injected_fields.append(key)
 
-            if injected_fields:
-                title = it.get("book_title") or it.get("title") or "(no title)"
-                short_title = str(title)[:200]
-                logger.info(
+                if injected_fields:
+                    meta["injected_fields"] = list(injected_fields)
+                    meta["injected_item_index"] = i
+                    title = it.get("book_title") or it.get("title") or "(no title)"
+                    short_title = str(title)[:200]
+                    logger.info(
                     "Injected item: request_id=%s item_index=%d fields=%s title=%s payload=%s",
                     request_id,
                     i,
