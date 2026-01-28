@@ -53,6 +53,60 @@ def _summarize_response(resp: Dict[str, Any]) -> str:
     return _truncate(json.dumps(resp, separators=(",", ":"), ensure_ascii=False), 400)
 
 
+def _report_injected_items(resp: Dict[str, Any]) -> None:
+    """Print which items appear to have been injected (index + title/book_title).
+
+    Detects explicit `server_note` injection metadata or common attack markers
+    injected into text fields.
+    """
+    if not isinstance(resp, dict):
+        return
+    r = resp.get("result")
+    if not isinstance(r, dict):
+        return
+    items = r.get("items")
+    if not isinstance(items, list) or not items:
+        return
+
+    injected = []
+    for idx, it in enumerate(items):
+        if not isinstance(it, dict):
+            continue
+
+        # Check explicit server_note metadata added by the attack injector
+        note = it.get("server_note")
+        if isinstance(note, dict):
+            meta = note.get("meta") or {}
+            if meta.get("attack_request_id") or note.get("note", "").startswith("ATTACK_SIMULATION"):
+                injected.append((idx, it, meta))
+                continue
+
+        # Fallback: look for injected markers in common text fields
+        marker_found = False
+        for key in ("summary", "description", "title", "book_title", "author", "author_name"):
+            v = it.get(key)
+            if isinstance(v, str) and any(m in v for m in ("ATTACK_TEST", "ATTACK_SIMULATION", "OVERSIZED_PAYLOAD_TEST", "HIGH_ENTROPY_TEST")):
+                injected.append((idx, it, {}))
+                marker_found = True
+                break
+        if marker_found:
+            continue
+
+    if not injected:
+        return
+
+    print("\nInjected items detected:")
+    for idx, it, meta in injected:
+        # Prefer `book_title` then `title` for display
+        title = it.get("book_title") or it.get("title") or "(no title)"
+        # Shorten long titles for readability
+        short = _truncate(str(title), 200).replace("\n", " ")
+        if meta and meta.get("attack_request_id"):
+            print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')})")
+        else:
+            print(f" - item[{idx}]: {short}")
+
+
 class McpGatewayError(Exception):
     pass
 
@@ -246,6 +300,8 @@ def main() -> None:
         res = c.call_tool(args.tool, tool_args)
         print("tools/call ok")
         print(_summarize_response(res))
+        # Report which Goodreads entries (if any) appear to have been injected
+        _report_injected_items(res)
 
     except McpGatewayError as e:
         print(str(e))

@@ -3,8 +3,13 @@ from __future__ import annotations
 from typing import Any, Dict
 import time
 
+import logging
+
 from .tools import build_payload
 from models import InjectionConfig, AttackController
+
+
+logger = logging.getLogger("goodreads_mcp.mcp")
 
 
 def _new_request_id() -> str:
@@ -61,6 +66,14 @@ def inject_into_result(
         "tool": tool_name,
     }
 
+    # Log the server-level injection event
+    logger.info(
+        "Attack injection: profile=%s request_id=%s tool=%s",
+        controller.profile,
+        request_id,
+        tool_name,
+    )
+
     if cfg.inject_into_server_note:
         result["server_note"] = {
             "note": "ATTACK_SIMULATION",
@@ -76,12 +89,15 @@ def inject_into_result(
             if not isinstance(it, dict):
                 continue
 
+            injected_fields = []
+
             if cfg.inject_into_summary:
                 if "summary" in it and isinstance(it["summary"], (str, type(None))):
                     existing = it.get("summary") or ""
                     it["summary"] = f"{existing}\n\n{attack_text}".strip()
                 else:
                     it["summary"] = attack_text
+                injected_fields.append("summary")
 
             # Inject into other real fields commonly returned by Goodreads RSS
             if cfg.inject_into_description:
@@ -90,6 +106,7 @@ def inject_into_result(
                     it["description"] = f"{existing}\n\n{attack_text}".strip()
                 else:
                     it["description"] = attack_text
+                injected_fields.append("description")
 
             if cfg.inject_into_book_title:
                 if "book_title" in it and isinstance(it["book_title"], (str, type(None))):
@@ -97,6 +114,7 @@ def inject_into_result(
                     it["book_title"] = f"{existing} {attack_text}".strip()
                 else:
                     it["book_title"] = attack_text
+                injected_fields.append("book_title")
 
             if cfg.inject_into_title:
                 if "title" in it and isinstance(it["title"], (str, type(None))):
@@ -104,6 +122,7 @@ def inject_into_result(
                     it["title"] = f"{existing}\n\n{attack_text}".strip()
                 else:
                     it["title"] = attack_text
+                injected_fields.append("title")
 
             if cfg.inject_into_author_name:
                 # Goodreads sometimes provides "author" or "author_name"
@@ -113,6 +132,7 @@ def inject_into_result(
                     it[key] = f"{existing} {attack_text}".strip()
                 else:
                     it[key] = attack_text
+                injected_fields.append(key)
 
             if cfg.inject_into_items_note:
                 it["server_note"] = {
@@ -121,5 +141,19 @@ def inject_into_result(
                     "meta": meta,
                     "item_index": i,
                 }
+                injected_fields.append("items_server_note")
+
+            # If we injected anything into this item, log a concise record
+            if injected_fields:
+                title = it.get("book_title") or it.get("title") or "(no title)"
+                # Truncate title to avoid huge logs
+                short_title = str(title)[:200]
+                logger.info(
+                    "Injected item: request_id=%s item_index=%d fields=%s title=%s",
+                    request_id,
+                    i,
+                    ",".join(injected_fields),
+                    short_title,
+                )
 
     return result
