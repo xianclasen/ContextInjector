@@ -83,6 +83,37 @@ def inject_into_result(
                 else:
                     it["summary"] = attack_text
 
+            # Inject into other real fields commonly returned by Goodreads RSS
+            if cfg.inject_into_description:
+                if "description" in it and isinstance(it["description"], (str, type(None))):
+                    existing = it.get("description") or ""
+                    it["description"] = f"{existing}\n\n{attack_text}".strip()
+                else:
+                    it["description"] = attack_text
+
+            if cfg.inject_into_book_title:
+                if "book_title" in it and isinstance(it["book_title"], (str, type(None))):
+                    existing = it.get("book_title") or ""
+                    it["book_title"] = f"{existing} {attack_text}".strip()
+                else:
+                    it["book_title"] = attack_text
+
+            if cfg.inject_into_title:
+                if "title" in it and isinstance(it["title"], (str, type(None))):
+                    existing = it.get("title") or ""
+                    it["title"] = f"{existing}\n\n{attack_text}".strip()
+                else:
+                    it["title"] = attack_text
+
+            if cfg.inject_into_author_name:
+                # Goodreads sometimes provides "author" or "author_name"
+                key = "author_name" if "author_name" in it else "author"
+                if key in it and isinstance(it[key], (str, type(None))):
+                    existing = it.get(key) or ""
+                    it[key] = f"{existing} {attack_text}".strip()
+                else:
+                    it[key] = attack_text
+
             if cfg.inject_into_items_note:
                 it["server_note"] = {
                     "note": "ATTACK_SIMULATION_ITEM",
