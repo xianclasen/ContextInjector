@@ -4,6 +4,10 @@ import uuid
 from typing import Any, Dict, Optional
 
 import httpx
+import logging
+
+# Use the shared logging setup (supports LOG_FORMAT / LOG_COLOR)
+from logutils.formatters import setup_logging
 
 
 def _mk_id() -> str:
@@ -95,7 +99,8 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     if not injected:
         return
 
-    print("\nInjected items detected:")
+    logger = logging.getLogger("mcp_client")
+    logger.info("Injected items detected:")
     for idx, it, meta in injected:
         # Prefer `book_title` then `title` for display
         title = it.get("book_title") or it.get("title") or "(no title)"
@@ -105,15 +110,28 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         if meta and meta.get("attack_request_id"):
             fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
-                print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')}) fields={','.join(fields)}")
+                logger.info(
+                    " - item[%d]: %s  (profile=%s, request=%s) fields=%s",
+                    idx,
+                    short,
+                    meta.get("attack_profile"),
+                    meta.get("attack_request_id"),
+                    ",".join(fields),
+                )
             else:
-                print(f" - item[{idx}]: {short}  (profile={meta.get('attack_profile')}, request={meta.get('attack_request_id')})")
+                logger.info(
+                    " - item[%d]: %s  (profile=%s, request=%s)",
+                    idx,
+                    short,
+                    meta.get("attack_profile"),
+                    meta.get("attack_request_id"),
+                )
         else:
             fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
-                print(f" - item[{idx}]: {short}  (fields={','.join(fields)})")
+                logger.info(" - item[%d]: %s  (fields=%s)", idx, short, ",".join(fields))
             else:
-                print(f" - item[{idx}]: {short}")
+                logger.info(" - item[%d]: %s", idx, short)
 
 
 class McpGatewayError(Exception):
@@ -287,33 +305,37 @@ def main() -> None:
 
     args = ap.parse_args()
 
+    # Configure logging for the client (respects LOG_FORMAT / LOG_COLOR)
+    setup_logging("mcp_client")
+    logger = logging.getLogger("mcp_client")
+
     c = McpHttpClient(
         args.url, timeout_s=args.timeout, http2=args.http2, verify_tls=not args.insecure
     )
 
     try:
-        print("Initializing…")
+        logger.info("Initializing…")
         c.initialize()
-        print("Session:", c.session_id)
+        logger.info("Session: %s", c.session_id)
 
         # Lightweight tools listing for visibility
-        print("\nListing tools…")
+        logger.info("Listing tools…")
         try:
             tools = c.list_tools()
-            print("tools/list ok")
-            print(_summarize_response(tools))
+            logger.info("tools/list ok")
+            logger.info(_summarize_response(tools))
         except McpGatewayError:
-            print("tools/list failed or blocked — continuing")
+            logger.warning("tools/list failed or blocked — continuing")
 
         # If attack mode selected, attempt to set the attack profile
         if args.attack:
-            print(f"\nSetting attack profile: {args.profile}")
+            logger.info("Setting attack profile: %s", args.profile)
             try:
                 res = c.call_tool("set_attack_profile", {"profile": args.profile})
-                print("set_attack_profile ok")
-                print(_summarize_response(res))
+                logger.info("set_attack_profile ok")
+                logger.info(_summarize_response(res))
             except McpGatewayError:
-                print("set_attack_profile failed or not exposed — continuing")
+                logger.warning("set_attack_profile failed or not exposed — continuing")
 
         # Build tool arguments
         if args.tool_args:
@@ -321,15 +343,15 @@ def main() -> None:
         else:
             tool_args = {"shelf": args.shelf, "limit": args.limit}
 
-        print(f"\nCalling tool: {args.tool} args={tool_args}")
+        logger.info("Calling tool: %s args=%s", args.tool, tool_args)
         res = c.call_tool(args.tool, tool_args)
-        print("tools/call ok")
-        print(_summarize_response(res))
+        logger.info("tools/call ok")
+        logger.info(_summarize_response(res))
         # Report which Goodreads entries (if any) appear to have been injected
         _report_injected_items(res)
 
     except McpGatewayError as e:
-        print(str(e))
+        logger.error(str(e))
     finally:
         c.close()
 
