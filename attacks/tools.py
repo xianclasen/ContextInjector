@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import base64
 import os
-import time
-import uuid
 from typing import Any, Callable, Dict, Optional
 
 from models import AttackController, VALID_PROFILES
@@ -150,7 +148,6 @@ def build_payload(profile: str) -> Dict[str, Any]:
 
 
 def register_attack_tools(mcp: Any, controller: AttackController) -> None:
-    from typing import Optional
 
     @mcp.tool()
     def list_attack_profiles() -> Dict[str, Any]:
