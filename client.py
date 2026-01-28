@@ -204,6 +204,21 @@ class McpHttpClient:
         resp = self._client.post(self.url, json=payload, headers=self._headers())
         return self._decode(resp, method)
 
+    def notify(
+        self, method: str, params: Optional[Dict[str, Any]] = None
+    ) -> None:
+        """Send a JSON-RPC notification (no 'id') to the MCP gateway."""
+        payload = {
+            "jsonrpc": "2.0",
+            "method": method,
+            "params": params or {},
+        }
+        resp = self._client.post(self.url, json=payload, headers=self._headers())
+        if resp.status_code >= 400:
+            raise McpGatewayError(
+                f"[HTTP ERROR] HTTP {resp.status_code} method={method}\nBody:\n{_truncate(resp.text)}"
+            )
+
     # Initialize the MCP session
     def initialize(self) -> Dict[str, Any]:
         msg = self.call(
@@ -218,7 +233,8 @@ class McpHttpClient:
             raise McpGatewayError(
                 "Initialize succeeded but no Mcp-Session-Id header was provided."
             )
-        _ = self.call("notifications/initialized", {})
+        # Send notifications/initialized as a JSON-RPC notification (no id)
+        self.notify("notifications/initialized", {})
         return msg
 
     # List available tools

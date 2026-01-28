@@ -11,6 +11,7 @@ import os
 from dotenv import load_dotenv
 import uvicorn
 
+
 load_dotenv()
 
 
@@ -100,6 +101,7 @@ def main() -> None:
     state.inj_cfg.max_items_to_inject = max(0, int(args.inject_max_items))
 
     app = mcp.http_app(path=args.path)
+    # (request-logging middleware removed)
 
     # uvicorn config
     uvicorn_kwargs = {"host": args.host, "port": args.port}
