@@ -68,7 +68,18 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     if not isinstance(r, dict):
         return
 
-    note = r.get("server_note")
+    # MCP tool results may wrap structured JSON inside content[].structuredContent
+    payload_root = r
+    content = r.get("content")
+    if isinstance(content, list):
+        for block in content:
+            if isinstance(block, dict):
+                sc = block.get("structuredContent")
+                if isinstance(sc, dict):
+                    payload_root = sc
+                    break
+
+    note = payload_root.get("server_note")
     meta = {}
     if isinstance(note, dict):
         meta = note.get("meta") or {}
@@ -80,7 +91,7 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
                 logger.info("Attack profile: %s (request=%s)", profile, req_id)
             else:
                 logger.info("Attack profile: %s", profile)
-    items = r.get("items")
+    items = payload_root.get("items")
     if not isinstance(items, list) or not items:
         return
 
@@ -105,73 +116,71 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
             injected.append((idx, it, {"injected_fields": fields_found}))
             continue
 
-    if not injected:
-        return
-
     logger = logging.getLogger("mcp_client")
-    logger.info("Injected items detected:")
-    for idx, it, meta in injected:
-        title = it.get("book_title") or it.get("title") or "(no title)"
-        short = _truncate(str(title), 200).replace("\n", " ")
-        payload = None
-        fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
-        if fields:
-            for key in fields:
-                v = it.get(key)
-                if isinstance(v, str):
-                    payload = _one_line(v)
-                    break
-        if meta and meta.get("attack_request_id"):
+    if injected:
+        logger.info("Injected items detected:")
+        for idx, it, meta in injected:
+            title = it.get("book_title") or it.get("title") or "(no title)"
+            short = _truncate(str(title), 200).replace("\n", " ")
+            payload = None
+            fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
-                logger.info(
-                    " - item[%d]: %s  (profile=%s, request=%s) fields=%s payload=%s",
-                    idx,
-                    short,
-                    meta.get("attack_profile"),
-                    meta.get("attack_request_id"),
-                    ",".join(fields),
-                    payload or "",
-                )
-            else:
-                logger.info(
-                    " - item[%d]: %s  (profile=%s, request=%s) payload=%s",
-                    idx,
-                    short,
-                    meta.get("attack_profile"),
-                    meta.get("attack_request_id"),
-                    payload or "",
-                )
-        else:
-            if fields:
-                logger.info(
-                    " - item[%d]: %s  (fields=%s) payload=%s",
-                    idx,
-                    short,
-                    ",".join(fields),
-                    payload or "",
-                )
-            else:
-                logger.info(" - item[%d]: %s payload=%s", idx, short, payload or "")
-
-    if not injected:
-        fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
-        item_index = meta.get("injected_item_index")
-        if fields and isinstance(item_index, int) and 0 <= item_index < len(items):
-            it = items[item_index]
-            if isinstance(it, dict):
-                payload = None
                 for key in fields:
                     v = it.get(key)
                     if isinstance(v, str):
                         payload = _one_line(v)
                         break
-                if payload:
+            if meta and meta.get("attack_request_id"):
+                if fields:
                     logger.info(
-                        "Injected items detected: item[%d] fields=%s payload=%s",
-                        item_index,
+                        " - item[%d]: %s  (profile=%s, request=%s) fields=%s payload=%s",
+                        idx,
+                        short,
+                        meta.get("attack_profile"),
+                        meta.get("attack_request_id"),
                         ",".join(fields),
-                        payload,
+                        payload or "",
                     )
+                else:
+                    logger.info(
+                        " - item[%d]: %s  (profile=%s, request=%s) payload=%s",
+                        idx,
+                        short,
+                        meta.get("attack_profile"),
+                        meta.get("attack_request_id"),
+                        payload or "",
+                    )
+            else:
+                if fields:
+                    logger.info(
+                        " - item[%d]: %s  (fields=%s) payload=%s",
+                        idx,
+                        short,
+                        ",".join(fields),
+                        payload or "",
+                    )
+                else:
+                    logger.info(" - item[%d]: %s payload=%s", idx, short, payload or "")
+        return
+
+    fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
+    item_index = meta.get("injected_item_index")
+    if fields and isinstance(item_index, int) and 0 <= item_index < len(items):
+        it = items[item_index]
+        if isinstance(it, dict):
+            payload = None
+            for key in fields:
+                v = it.get(key)
+                if isinstance(v, str):
+                    payload = _one_line(v)
+                    break
+            if payload:
+                logger.info(
+                    "Injected items detected: item[%d] fields=%s payload=%s",
+                    item_index,
+                    ",".join(fields),
+                    payload,
+                )
 
 
 class McpGatewayError(Exception):
