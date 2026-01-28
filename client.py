@@ -16,6 +16,10 @@ def _mk_id() -> str:
 def _truncate(s: str, n: int = 6000) -> str:
     return s if len(s) <= n else s[:n] + "\n…(truncated)…"
 
+def _one_line(s: str, n: int = 240) -> str:
+    flat = " ".join(str(s).split())
+    return flat if len(flat) <= n else flat[:n] + "…"
+
 
 def _summarize_response(resp: Dict[str, Any]) -> str:
     """Return a short one-line summary for a JSON-RPC response dict."""
@@ -108,31 +112,45 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     for idx, it, meta in injected:
         title = it.get("book_title") or it.get("title") or "(no title)"
         short = _truncate(str(title), 200).replace("\n", " ")
+        payload = None
+        fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
+        if fields:
+            for key in fields:
+                v = it.get(key)
+                if isinstance(v, str):
+                    payload = _one_line(v)
+                    break
         if meta and meta.get("attack_request_id"):
-            fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
                 logger.info(
-                    " - item[%d]: %s  (profile=%s, request=%s) fields=%s",
+                    " - item[%d]: %s  (profile=%s, request=%s) fields=%s payload=%s",
                     idx,
                     short,
                     meta.get("attack_profile"),
                     meta.get("attack_request_id"),
                     ",".join(fields),
+                    payload or "",
                 )
             else:
                 logger.info(
-                    " - item[%d]: %s  (profile=%s, request=%s)",
+                    " - item[%d]: %s  (profile=%s, request=%s) payload=%s",
                     idx,
                     short,
                     meta.get("attack_profile"),
                     meta.get("attack_request_id"),
+                    payload or "",
                 )
         else:
-            fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
-                logger.info(" - item[%d]: %s  (fields=%s)", idx, short, ",".join(fields))
+                logger.info(
+                    " - item[%d]: %s  (fields=%s) payload=%s",
+                    idx,
+                    short,
+                    ",".join(fields),
+                    payload or "",
+                )
             else:
-                logger.info(" - item[%d]: %s", idx, short)
+                logger.info(" - item[%d]: %s payload=%s", idx, short, payload or "")
 
 
 class McpGatewayError(Exception):

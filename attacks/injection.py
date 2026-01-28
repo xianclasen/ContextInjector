@@ -12,6 +12,10 @@ from models import InjectionConfig, AttackController
 
 logger = logging.getLogger("goodreads_mcp.mcp")
 
+def _one_line(s: str, max_len: int = 240) -> str:
+    flat = " ".join(str(s).split())
+    return flat if len(flat) <= max_len else flat[:max_len] + "…"
+
 
 def _baseline_payload() -> Dict[str, Any]:
     return {
@@ -192,10 +196,11 @@ def inject_into_result(
     }
 
     logger.info(
-        "Attack injection: profile=%s request_id=%s tool=%s",
+        "Attack injection: profile=%s request_id=%s tool=%s payload=%s",
         controller.profile,
         request_id,
         tool_name,
+        _one_line(attack_text),
     )
 
     result["server_note"] = {
@@ -254,11 +259,12 @@ def inject_into_result(
                     title = it.get("book_title") or it.get("title") or "(no title)"
                     short_title = str(title)[:200]
                     logger.info(
-                        "Injected item: request_id=%s item_index=%d fields=%s title=%s",
+                        "Injected item: request_id=%s item_index=%d fields=%s title=%s payload=%s",
                         request_id,
                         0,
                         ",".join(injected_fields),
                         short_title,
+                        _one_line(attack_text),
                     )
                     return result
 
@@ -319,11 +325,12 @@ def inject_into_result(
                 title = it.get("book_title") or it.get("title") or "(no title)"
                 short_title = str(title)[:200]
                 logger.info(
-                    "Injected item: request_id=%s item_index=%d fields=%s title=%s",
+                    "Injected item: request_id=%s item_index=%d fields=%s title=%s payload=%s",
                     request_id,
                     i,
                     ",".join(injected_fields),
                     short_title,
+                    _one_line(attack_text),
                 )
 
     return result
