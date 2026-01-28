@@ -1,0 +1,38 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Sensitive variables
+.env
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Testing, coverage, and caches
+.pytest_cache/
+.mypy_cache/
+.tox/
+.cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtualenvs and packaging
+env/
+venv/
+pip-wheel-metadata/
+__pypackages__/
+
+# Compiled and runtime files
+*.pyc
+*.log
+*.sqlite3
