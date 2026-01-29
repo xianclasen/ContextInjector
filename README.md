@@ -5,11 +5,13 @@ As an avid reader, I wanted a way to expose my GoodReads data to an LLM in order
 
 As a security nerd, I wanted to be able to inject malicious context into that data. So I built this lightweight MCP demo server and client that exposes Goodreads/RSS data and demonstrates common integration and attack scenarios (for learning and testing).
 
-The project includes both a client and server. Attack type can be selected at either side.
+The project includes both a client and server. Attack type can be selected at either side, on the server by setting the attack profile at start-up, and on the client by setting it at request time. 
+
+No LLM is needed for this setup, nor is it relevent. This setup is purely for testing attempted attacks originating from a malicious MCP server on the internet. Depending on how naive a real-world LLM and MCP client are these attacks may succeed or fail. I simply want to know if an inline proxy / gateway would catch the attacks using semantic inspection between the internet and the MCP client.
 
 ## Purpose
 
-This project is a small demonstration of an MCP-based service that fetches and exposes book-related data (via RSS/Goodreads integration), includes logging, and contains examples of attack vectors.
+This project is a small demonstration of an MCP-based service that fetches and exposes book-related data (via RSS/Goodreads integration), includes logging, and contains examples of attack vectors. The main driver for me was to test semantic inspection proxies for efficacy.
 
 ## Features
 
@@ -149,7 +151,7 @@ Client (`client.py`):
 - `--http2` : Enable HTTP/2
 - `--timeout` : Request timeout seconds (default `20.0`)
 - `--insecure` : Disable TLS verification
- - `--skip-set-profile` : Do not call `set_attack_profile` (use server-side profile or per-request `profile_id`)
+- `--skip-set-profile` : Do not call `set_attack_profile` (use server-side profile or per-request `profile_id`)
 - `--profile-id` : Numeric profile id passed as tool arg (proxy-safe)
 - `--attack-only` : Request attack-only tool output (per-request override)
 - `--tool` : Tool name to call (default `fetch_shelf_rss`)
