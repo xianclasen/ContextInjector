@@ -329,11 +329,6 @@ def main() -> None:
     ap.add_argument("--insecure", action="store_true", help="Disable TLS verification")
 
     ap.add_argument(
-        "--profile",
-        default="prompt_injection",
-        help="Attack profile to set (if set_attack_profile is available)",
-    )
-    ap.add_argument(
         "--skip-set-profile",
         action="store_true",
         help="Do not call set_attack_profile (use server-side profile config)",
@@ -381,14 +376,6 @@ def main() -> None:
 
         if args.skip_set_profile:
             logger.info("Skipping set_attack_profile (server-side profile expected)")
-        else:
-            logger.info("Setting attack profile: %s", args.profile)
-            try:
-                res = c.call_tool("set_attack_profile", {"profile": args.profile})
-                logger.info("set_attack_profile ok")
-                logger.info(_summarize_response(res))
-            except McpGatewayError:
-                logger.warning("set_attack_profile failed or not exposed — continuing")
 
         if args.tool_args:
             tool_args = json.loads(args.tool_args)

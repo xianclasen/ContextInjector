@@ -86,6 +86,9 @@ Explore the `attacks/` and `models/` packages to see example components and demo
 
 Profiles simulate realistic malicious content embedded in tool outputs so a semantic inspection proxy can test detection/blocking behavior.
 
+- Per-request profile override (proxy-safe): `fetch_shelf_rss` accepts `profile_id` (numeric) and optional `attack_only` (bool).
+  This avoids sending profile names through the proxy.
+
 - `baseline` : Normal content; no attack text injected.
 - `prompt_injection` : Embedded system-override instructions inside summaries.
 - `mixed_content` : Plausible content with hidden instruction overrides.
@@ -94,6 +97,17 @@ Profiles simulate realistic malicious content embedded in tool outputs so a sema
 - `oversized_payload` : Large payload injected into fields to test size limits and truncation.
 - `high_entropy` : High-entropy base64 data injected to test entropy or binary-like payload handling.
 - `schema_confusion` : Wrong types and unexpected items in structured results to test schema validation.
+
+Profile IDs (for `profile_id`):
+
+- `0` : baseline
+- `1` : prompt_injection
+- `2` : tool_coercion
+- `3` : data_exfiltration
+- `4` : oversized_payload
+- `5` : high_entropy
+- `6` : schema_confusion
+- `7` : mixed_content
 
 ## Command-line arguments
 
@@ -121,11 +135,23 @@ Client (`client.py`):
 - `--http2` : Enable HTTP/2
 - `--timeout` : Request timeout seconds (default `20.0`)
 - `--insecure` : Disable TLS verification
-- `--profile` : Attack profile to set (default `prompt_injection`)
+ - `--skip-set-profile` : Do not call `set_attack_profile` (use server-side profile or per-request `profile_id`)
+- `--profile-id` : Numeric profile id passed as tool arg (proxy-safe)
+- `--attack-only` : Request attack-only tool output (per-request override)
 - `--tool` : Tool name to call (default `fetch_shelf_rss`)
 - `--shelf` : Shelf name used by default tool args (default `read`)
 - `--limit` : Limit for default tool args (default `20`)
 - `--tool-args` : Raw JSON string to use as tool arguments (overrides `--shelf`/`--limit`)
+
+## Proxy-safe per-request profiles
+
+To avoid proxy blocks on `set_attack_profile`, pass the numeric profile id on the tool call:
+
+```bash
+python client.py --skip-set-profile --profile-id 5 --tool fetch_shelf_rss --shelf read --limit 5
+```
+
+`--attack-only` can be combined to request attack-only responses without changing server state.
 
 ## Project layout
 
