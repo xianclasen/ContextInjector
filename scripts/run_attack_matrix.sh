@@ -72,13 +72,30 @@ for mode in injection attack_only; do
     echo "Testing profile: $profile ($mode)"
 
     run_client "$profile" "$CLIENT_LOG" "$MCP_URL" || true
-    status="$(grep -Eo 'HTTP/[0-9.]+ [0-9]{3}|HTTP [0-9]{3}' "$CLIENT_LOG" | head -n1 | awk '{print $2}' || true)"
+    profile_ok=0
+    if grep -q "set_attack_profile ok" "$CLIENT_LOG"; then
+      profile_ok=1
+    fi
+
+    status="$(awk '
+      /Calling tool: fetch_shelf_rss/ { seen_call=1; next }
+      seen_call && /HTTP Request:/ {
+        if (match($0, /HTTP\\/[0-9.]+ ([0-9]{3})/, m)) {
+          status=m[1]; exit
+        } else if (match($0, /HTTP ([0-9]{3})/, m2)) {
+          status=m2[1]; exit
+        }
+      }
+      END { if (status != "") print status }
+    ' "$CLIENT_LOG")"
     if [[ -z "$status" ]]; then
       status="200"
     fi
 
-    if [[ "$status" == "400" ]]; then
+    if [[ "$status" == "400" && "$profile_ok" == "1" ]]; then
       outcome="BLOCKED"
+    elif [[ "$status" == "400" && "$profile_ok" == "0" ]]; then
+      outcome="PROFILE_NOT_SET"
     elif [[ "$status" =~ ^[0-9]{3}$ && "$status" -ge 400 ]]; then
       outcome="ERROR"
     else
