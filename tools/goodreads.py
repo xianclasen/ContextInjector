@@ -5,12 +5,13 @@ import os
 import re
 from datetime import timezone
 from email.utils import parsedate_to_datetime
+from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence
 
 import httpx
 
 from attacks.injection import inject_into_result
-from models import AppState
+from models import AppState, AttackController, PROFILE_ID_TO_NAME
 
 
 DEFAULT_TIMEOUT_S = 20.0
@@ -172,6 +173,8 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
         sort: str = "date_updated",
         order: str = "d",
         limit: int = 500,
+        profile_id: Optional[int] = None,
+        attack_only: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Fetch Goodreads shelf RSS and return parsed items.
@@ -193,9 +196,21 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
             "count": len(out_items),
             "items": out_items,
         }
-        return inject_into_result(
-            "fetch_shelf_rss", result, state.attack_controller, state.inj_cfg
-        )
+        controller = state.attack_controller
+        if profile_id is not None:
+            profile = PROFILE_ID_TO_NAME.get(int(profile_id))
+            if not profile:
+                raise ValueError(
+                    f"Invalid profile_id '{profile_id}'. Valid: {sorted(PROFILE_ID_TO_NAME)}"
+                )
+            controller = AttackController()
+            controller.set_profile(profile)
+
+        cfg = state.inj_cfg
+        if attack_only is not None:
+            cfg = replace(cfg, attack_only=bool(attack_only))
+
+        return inject_into_result("fetch_shelf_rss", result, controller, cfg)
 
     @mcp.tool()
     def get_exclusion_set(

@@ -21,6 +21,19 @@ VALID_PROFILES = {
     "mixed_content",
 }
 
+PROFILE_ID_TO_NAME = {
+    0: "baseline",
+    1: "prompt_injection",
+    2: "tool_coercion",
+    3: "data_exfiltration",
+    4: "oversized_payload",
+    5: "high_entropy",
+    6: "schema_confusion",
+    7: "mixed_content",
+}
+
+PROFILE_NAME_TO_ID = {v: k for k, v in PROFILE_ID_TO_NAME.items()}
+
 
 @dataclass
 class AttackController:

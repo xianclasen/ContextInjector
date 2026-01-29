@@ -27,6 +27,20 @@ PROFILES=(
   mixed_content
 )
 
+profile_id_for() {
+  case "$1" in
+    baseline) echo "0" ;;
+    prompt_injection) echo "1" ;;
+    tool_coercion) echo "2" ;;
+    data_exfiltration) echo "3" ;;
+    oversized_payload) echo "4" ;;
+    high_entropy) echo "5" ;;
+    schema_confusion) echo "6" ;;
+    mixed_content) echo "7" ;;
+    *) echo "255" ;;
+  esac
+}
+
 severity_for_profile() {
   case "$1" in
     baseline) echo "NONE" ;;
@@ -45,11 +59,16 @@ run_client() {
   local profile="$1"
   local log_file="$2"
   local url="$3"
+  local profile_id="$4"
+  local attack_only="$5"
 
   set +e
   uv run --python "$VENV_PY" -- python client.py \
     --url "$url" \
     --profile "$profile" \
+    --profile-id "$profile_id" \
+    $( [[ "$SKIP_SET_PROFILE" == "1" ]] && echo "--skip-set-profile" ) \
+    $( [[ "$attack_only" == "1" ]] && echo "--attack-only" ) \
     --tool fetch_shelf_rss \
     --shelf read \
     --limit 5 2>&1 | tee "$log_file"
@@ -61,9 +80,10 @@ run_client() {
 REPORT_TS="$(date +%Y%m%d_%H%M%S)"
 REPORT_FILE="$ROOT_DIR/reports/attack_matrix_${REPORT_TS}.csv"
 MCP_URL="${MCP_URL:-http://127.0.0.1:3333/mcp}"
+SKIP_SET_PROFILE="${SKIP_SET_PROFILE:-1}"
 
 {
-  echo "timestamp,mode,profile,severity,http_status,outcome"
+  echo "timestamp,mode,profile,severity,profile_set,http_status,outcome"
 } > "$REPORT_FILE"
 
 for mode in injection attack_only; do
@@ -71,10 +91,22 @@ for mode in injection attack_only; do
     CLIENT_LOG="$ROOT_DIR/logs/client_${mode}_${profile}_${REPORT_TS}.log"
     echo "Testing profile: $profile ($mode)"
 
-    run_client "$profile" "$CLIENT_LOG" "$MCP_URL" || true
-    profile_ok=0
-    if grep -q "set_attack_profile ok" "$CLIENT_LOG"; then
-      profile_ok=1
+    profile_id="$(profile_id_for "$profile")"
+    if [[ "$profile_id" == "255" ]]; then
+      echo "Unknown profile: $profile" >&2
+      exit 1
+    fi
+    if [[ "$mode" == "attack_only" ]]; then
+      attack_only="1"
+    else
+      attack_only="0"
+    fi
+    run_client "$profile" "$CLIENT_LOG" "$MCP_URL" "$profile_id" "$attack_only" || true
+    profile_set="no"
+    if [[ "$SKIP_SET_PROFILE" == "1" ]]; then
+      profile_set="yes"
+    elif grep -q "set_attack_profile ok" "$CLIENT_LOG"; then
+      profile_set="yes"
     fi
 
     status="$(awk '
@@ -97,9 +129,9 @@ for mode in injection attack_only; do
       status="200"
     fi
 
-    if [[ "$status" == "400" && "$profile_ok" == "1" ]]; then
+    if [[ "$status" == "400" && "$profile_set" == "yes" ]]; then
       outcome="BLOCKED"
-    elif [[ "$status" == "400" && "$profile_ok" == "0" ]]; then
+    elif [[ "$profile_set" == "no" && "$profile" != "baseline" ]]; then
       outcome="PROFILE_NOT_SET"
     elif [[ "$status" =~ ^[0-9]{3}$ && "$status" -ge 400 ]]; then
       outcome="ERROR"
@@ -109,7 +141,7 @@ for mode in injection attack_only; do
 
     severity="$(severity_for_profile "$profile")"
 
-    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$mode,$profile,$severity,$status,$outcome" >> "$REPORT_FILE"
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$mode,$profile,$severity,$profile_set,$status,$outcome" >> "$REPORT_FILE"
   done
 done
 

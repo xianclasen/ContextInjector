@@ -1,4 +1,9 @@
-from .attack_controller import AttackController, VALID_PROFILES
+from .attack_controller import (
+    AttackController,
+    VALID_PROFILES,
+    PROFILE_ID_TO_NAME,
+    PROFILE_NAME_TO_ID,
+)
 from .injection import InjectionConfig
 from .app_state import AppState
 
@@ -7,4 +12,6 @@ __all__ = [
     "InjectionConfig",
     "AppState",
     "VALID_PROFILES",
+    "PROFILE_ID_TO_NAME",
+    "PROFILE_NAME_TO_ID",
 ]
