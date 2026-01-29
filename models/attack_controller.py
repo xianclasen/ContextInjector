@@ -18,7 +18,6 @@ VALID_PROFILES = {
     "oversized_payload",
     "high_entropy",
     "schema_confusion",
-    "protocol_violation",
     "mixed_content",
 }
 

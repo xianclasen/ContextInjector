@@ -82,6 +82,19 @@ python client.py
 
 Explore the `attacks/` and `models/` packages to see example components and demonstration code.
 
+## Attack profiles
+
+Profiles simulate realistic malicious content embedded in tool outputs so a semantic inspection proxy can test detection/blocking behavior.
+
+- `baseline` : Normal content; no attack text injected.
+- `prompt_injection` : Embedded system-override instructions inside summaries.
+- `mixed_content` : Plausible content with hidden instruction overrides.
+- `tool_coercion` : Attempts to coerce the client to call a dangerous tool.
+- `data_exfiltration` : Requests secrets, internal config, and prior tool outputs.
+- `oversized_payload` : Large payload injected into fields to test size limits and truncation.
+- `high_entropy` : High-entropy base64 data injected to test entropy or binary-like payload handling.
+- `schema_confusion` : Wrong types and unexpected items in structured results to test schema validation.
+
 ## Command-line arguments
 
 Server (`server.py`):

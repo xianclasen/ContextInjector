@@ -92,26 +92,18 @@ def _high_entropy_payload(byte_len: int = 2048) -> Dict[str, Any]:
 def _schema_confusion_payload() -> Dict[str, Any]:
     return {
         "type": "SCHEMA_CONFUSION",
-        "result": [
-            {"id": 1, "value": "ok"},
-            {"id": "DROP TABLE users;", "value": None},
-            "This should not be here",
-            {"nested": {"deep": {"deeper": {"deepest": "X"}}}},
-        ],
-        "status": {"ok": True, "ok_duplicate": False},
+        "poison_item": {
+            "summary": ["unexpected", "list", 1],
+            "description": {"unexpected": "object"},
+            "title": None,
+            "author_name": ["Alice", "Bob"],
+            "rating": "five stars",
+            "published": 1970,
+            "extra": {"$schema": "http://example.com/unknown"},
+        },
+        "unexpected_item": "this-should-not-be-a-dict",
         "note": "SCHEMA_CONFUSION_TEST",
     }
-
-
-def _protocol_violation_payload() -> Dict[str, Any]:
-    return {
-        "type": "PROTOCOL_VIOLATION",
-        "jsonrpc": "1.0",
-        "id": "not-the-request-id",
-        "result": "This should never be accepted as a valid envelope.",
-        "note": "PROTOCOL_VIOLATION_TEST",
-    }
-
 
 def _mixed_content_payload() -> Dict[str, Any]:
     return {
@@ -134,7 +126,6 @@ PROFILE_TO_GENERATOR = {
     "oversized_payload": lambda: _oversized_payload(500_000),
     "high_entropy": lambda: _high_entropy_payload(2048),
     "schema_confusion": _schema_confusion_payload,
-    "protocol_violation": _protocol_violation_payload,
     "mixed_content": _mixed_content_payload,
 }
 
@@ -169,10 +160,28 @@ def make_attack_text(controller: AttackController) -> str:
     if "analysis" in payload:
         return str(payload["analysis"])
     if "content" in payload:
-        return f"[OVERSIZED_PAYLOAD_TEST size_bytes={payload.get('size_bytes')}]"
+        return str(payload["content"])
     if "blob" in payload:
-        return f"[HIGH_ENTROPY_TEST base64_len={len(payload.get('blob', ''))}]"
+        return str(payload["blob"])
     return f"[ATTACK_TEST profile={controller.profile}]"
+
+
+def _apply_schema_confusion(
+    result: Dict[str, Any], payload: Dict[str, Any]
+) -> Dict[str, Any]:
+    items = result.get("items")
+    if not isinstance(items, list):
+        return result
+    poison_item = payload.get("poison_item")
+    if isinstance(poison_item, dict) and items:
+        first = items[0]
+        if isinstance(first, dict):
+            for k, v in poison_item.items():
+                first[k] = v
+    unexpected = payload.get("unexpected_item")
+    if unexpected is not None:
+        items.insert(0, unexpected)
+    return result
 
 
 def _attack_only_envelope(tool_name: str) -> Dict[str, Any]:
@@ -198,6 +207,7 @@ def inject_into_result(
         return result
 
     request_id = controller.stamp_request()
+    payload = build_payload(controller.profile)
     attack_text = make_attack_text(controller)
     if cfg.attack_only:
         result = _attack_only_envelope(tool_name)
@@ -222,6 +232,9 @@ def inject_into_result(
         "note": "ATTACK_SIMULATION",
         "meta": meta,
     }
+
+    if controller.profile == "schema_confusion":
+        return _apply_schema_confusion(result, payload)
 
     if cfg.single_field_per_output:
         items = result.get("items")

@@ -36,3 +36,5 @@ __pypackages__/
 *.pyc
 *.log
 *.sqlite3
+logs/
+reports/
