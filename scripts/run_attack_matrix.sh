@@ -43,8 +43,8 @@ severity_for_profile() {
 
 run_client() {
   local profile="$1"
-  local log_file="$3"
-  local url="$4"
+  local log_file="$2"
+  local url="$3"
 
   uv run --python "$VENV_PY" -- python client.py \
     --url "$url" \
@@ -56,7 +56,7 @@ run_client() {
 
 REPORT_TS="$(date +%Y%m%d_%H%M%S)"
 REPORT_FILE="$ROOT_DIR/reports/attack_matrix_${REPORT_TS}.csv"
-MCP_URL="$MCP_URL"
+MCP_URL="${MCP_URL:-http://127.0.0.1:3333/mcp}"
 
 {
   echo "timestamp,mode,profile,severity,http_status,outcome"
@@ -85,7 +85,6 @@ for mode in injection attack_only; do
 
     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ),$mode,$profile,$severity,$status,$outcome" >> "$REPORT_FILE"
   done
- done
+done
 
- echo "Report written to: $REPORT_FILE"
- EOF
+echo "Report written to: $REPORT_FILE"
