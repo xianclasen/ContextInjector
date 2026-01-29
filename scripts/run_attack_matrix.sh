@@ -46,12 +46,16 @@ run_client() {
   local log_file="$2"
   local url="$3"
 
+  set +e
   uv run --python "$VENV_PY" -- python client.py \
     --url "$url" \
     --profile "$profile" \
     --tool fetch_shelf_rss \
     --shelf read \
     --limit 5 2>&1 | tee "$log_file"
+  local exit_code="${PIPESTATUS[0]}"
+  set -e
+  return "$exit_code"
 }
 
 REPORT_TS="$(date +%Y%m%d_%H%M%S)"
@@ -67,8 +71,8 @@ for mode in injection attack_only; do
     CLIENT_LOG="$ROOT_DIR/logs/client_${mode}_${profile}_${REPORT_TS}.log"
     echo "Testing profile: $profile ($mode)"
 
-    output="$(run_client "$profile" "$CLIENT_LOG" "$MCP_URL" || true)"
-    status="$(echo "$output" | grep -Eo 'HTTP/[0-9.]+ [0-9]{3}|HTTP [0-9]{3}' | head -n1 | awk '{print $2}' || true)"
+    run_client "$profile" "$CLIENT_LOG" "$MCP_URL" || true
+    status="$(grep -Eo 'HTTP/[0-9.]+ [0-9]{3}|HTTP [0-9]{3}' "$CLIENT_LOG" | head -n1 | awk '{print $2}' || true)"
     if [[ -z "$status" ]]; then
       status="200"
     fi
