@@ -80,13 +80,18 @@ for mode in injection attack_only; do
     status="$(awk '
       /Calling tool: fetch_shelf_rss/ { seen_call=1; next }
       seen_call && /HTTP Request:/ {
-        if (match($0, /HTTP\\/[0-9.]+ ([0-9]{3})/, m)) {
-          status=m[1]; exit
-        } else if (match($0, /HTTP ([0-9]{3})/, m2)) {
-          status=m2[1]; exit
+        line=$0
+        gsub(/"/, "", line)
+        split(line, f, " ")
+        for (i=1; i<=length(f); i++) {
+          if (f[i] ~ /^HTTP\/[0-9.]+$/ && f[i+1] ~ /^[0-9][0-9][0-9]$/) {
+            print f[i+1]; exit
+          }
+          if (f[i] == "HTTP" && f[i+1] ~ /^[0-9][0-9][0-9]$/) {
+            print f[i+1]; exit
+          }
         }
       }
-      END { if (status != "") print status }
     ' "$CLIENT_LOG")"
     if [[ -z "$status" ]]; then
       status="200"
