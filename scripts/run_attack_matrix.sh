@@ -67,7 +67,7 @@ for mode in injection attack_only; do
     CLIENT_LOG="$ROOT_DIR/logs/client_${mode}_${profile}_${REPORT_TS}.log"
     echo "Testing profile: $profile ($mode)"
 
-    output="$(run_client "$profile" "$CLIENT_LOG" "$MCP_URL")"
+    output="$(run_client "$profile" "$CLIENT_LOG" "$MCP_URL" || true)"
     status="$(echo "$output" | grep -Eo 'HTTP [0-9]{3}' | head -n1 | awk '{print $2}')"
     if [[ -z "$status" ]]; then
       status="200"
