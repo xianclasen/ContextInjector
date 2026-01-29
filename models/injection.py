@@ -19,3 +19,4 @@ class InjectionConfig:
     inject_into_book_title: bool = True
     inject_into_author_name: bool = True
     baseline_noop: bool = True
+    attack_only: bool = False

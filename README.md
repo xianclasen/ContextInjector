@@ -89,11 +89,10 @@ Server (`server.py`):
 - `--host` : Host to bind (default `0.0.0.0` or `MCP_HOST` env)
 - `--port` : Port to listen on (default `3333` or `MCP_PORT` env)
 - `--path` : HTTP path for MCP endpoint (default `/mcp` or `MCP_HTTP_PATH` env)
-- `--attack` : Enable attack/injection mode (sets injection state)
 - `--profile` : Attack profile name (default `prompt_injection` or `ATTACK_PROFILE` env)
 - `--inject` / `--no-inject` : Fine-grained enable/disable injection
-- `--inject-tools` : Comma-separated tool names the server may inject into (default `fetch_shelf_rss,get_exclusion_set`)
 - `--inject-max-items` : Max items to inject per response (default `2`)
+- `--attack-only` : Return only attack content (strip real Goodreads data). Can also be set via `ATTACK_ONLY=1`
 - `--disable-control-plane-tools` : Disable control plane tools registration
 
 TLS / HTTPS options (optional):
@@ -109,8 +108,7 @@ Client (`client.py`):
 - `--http2` : Enable HTTP/2
 - `--timeout` : Request timeout seconds (default `20.0`)
 - `--insecure` : Disable TLS verification
-- `--attack` : Enable attack mode on the client (will attempt to call `set_attack_profile`)
-- `--profile` : Attack profile to set when `--attack` is used (default `prompt_injection`)
+- `--profile` : Attack profile to set (default `prompt_injection`)
 - `--tool` : Tool name to call (default `fetch_shelf_rss`)
 - `--shelf` : Shelf name used by default tool args (default `read`)
 - `--limit` : Limit for default tool args (default `20`)

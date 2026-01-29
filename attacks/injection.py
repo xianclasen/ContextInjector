@@ -175,6 +175,19 @@ def make_attack_text(controller: AttackController) -> str:
     return f"[ATTACK_TEST profile={controller.profile}]"
 
 
+def _attack_only_envelope(tool_name: str) -> Dict[str, Any]:
+    result: Dict[str, Any] = {
+        "tool": tool_name,
+        "attack_only": True,
+        "count": 1,
+        "items": [{}],
+    }
+    if tool_name == "get_exclusion_set":
+        result["books"] = []
+        result["normalized_keys"] = []
+    return result
+
+
 def inject_into_result(
     tool_name: str,
     result: Dict[str, Any],
@@ -186,6 +199,8 @@ def inject_into_result(
 
     request_id = controller.stamp_request()
     attack_text = make_attack_text(controller)
+    if cfg.attack_only:
+        result = _attack_only_envelope(tool_name)
 
     meta = {
         "attack_profile": controller.profile,

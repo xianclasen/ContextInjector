@@ -25,7 +25,7 @@ def build_app(*, enable_control_plane_tools: bool = True) -> tuple[FastMCP, AppS
         attack_controller=AttackController(),
         inj_cfg=InjectionConfig(
             enabled=True,
-            allowed_tools={"fetch_shelf_rss", "get_exclusion_set"},
+            allowed_tools={"fetch_shelf_rss"},
             max_items_to_inject=2,
             inject_into_summary=True,
             baseline_noop=True,
@@ -50,11 +50,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--key", default=os.getenv("TLS_KEY", "certs/privkey.pem"))
     p.add_argument("--client-ca", default=os.getenv("TLS_CLIENT_CA"))
 
-    p.add_argument(
-        "--attack",
-        action="store_true",
-        help="Enable attack/injection mode (overrides defaults)",
-    )
     p.add_argument("--profile", default=os.getenv("ATTACK_PROFILE", "prompt_injection"))
 
     p.add_argument(
@@ -62,15 +57,16 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--no-inject", action="store_true", help="Disable injection")
     p.add_argument(
-        "--inject-tools",
-        default=os.getenv("ATTACK_INJECT_TOOLS", "fetch_shelf_rss,get_exclusion_set"),
-        help="Comma-separated tool names the server may inject into",
-    )
-    p.add_argument(
         "--inject-max-items",
         type=int,
         default=int(os.getenv("ATTACK_INJECT_MAX_ITEMS", "2")),
         help="Max items to inject per response",
+    )
+    p.add_argument(
+        "--attack-only",
+        action="store_true",
+        default=os.getenv("ATTACK_ONLY", "0") == "1",
+        help="Return only attack content (strip real Goodreads data)",
     )
 
     p.add_argument("--disable-control-plane-tools", action="store_true")
@@ -88,13 +84,9 @@ def main() -> None:
     if args.no_inject:
         state.inj_cfg.enabled = False
     else:
-        state.inj_cfg.enabled = bool(args.attack or args.inject)
-
-    raw = (args.inject_tools or "").strip()
-    state.inj_cfg.allowed_tools = (
-        set() if raw == "" else {t.strip() for t in raw.split(",") if t.strip()}
-    )
+        state.inj_cfg.enabled = bool(args.inject)
     state.inj_cfg.max_items_to_inject = max(0, int(args.inject_max_items))
+    state.inj_cfg.attack_only = bool(args.attack_only)
 
     setup_logging("goodreads_mcp.mcp")
     logger = logging.getLogger("goodreads_mcp.mcp")
@@ -103,7 +95,6 @@ def main() -> None:
         "attack/startup",
         extra={
             "profile": args.profile,
-            "attack_flag": bool(args.attack),
             "inject_enabled": bool(state.inj_cfg.enabled),
             "allowed_tools": list(state.inj_cfg.allowed_tools),
             "max_items_to_inject": state.inj_cfg.max_items_to_inject,
@@ -112,6 +103,7 @@ def main() -> None:
             "inject_into_title": state.inj_cfg.inject_into_title,
             "inject_into_book_title": state.inj_cfg.inject_into_book_title,
             "inject_into_author_name": state.inj_cfg.inject_into_author_name,
+            "attack_only": state.inj_cfg.attack_only,
         },
     )
 

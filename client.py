@@ -322,23 +322,16 @@ class McpHttpClient:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(
-        description="Simple MCP test client — choose legit or attack mode."
-    )
+    ap = argparse.ArgumentParser(description="Simple MCP test client.")
     ap.add_argument("--url", default="http://127.0.0.1:3333/mcp")
     ap.add_argument("--http2", action="store_true", help="Enable HTTP/2")
     ap.add_argument("--timeout", type=float, default=20.0)
     ap.add_argument("--insecure", action="store_true", help="Disable TLS verification")
 
     ap.add_argument(
-        "--attack",
-        action="store_true",
-        help="Enable attack mode (will call set_attack_profile if available)",
-    )
-    ap.add_argument(
         "--profile",
         default="prompt_injection",
-        help="Attack profile to set when --attack is used",
+        help="Attack profile to set (if set_attack_profile is available)",
     )
 
     ap.add_argument("--tool", default="fetch_shelf_rss", help="Tool name to call")
@@ -371,14 +364,13 @@ def main() -> None:
         except McpGatewayError:
             logger.warning("tools/list failed or blocked — continuing")
 
-        if args.attack:
-            logger.info("Setting attack profile: %s", args.profile)
-            try:
-                res = c.call_tool("set_attack_profile", {"profile": args.profile})
-                logger.info("set_attack_profile ok")
-                logger.info(_summarize_response(res))
-            except McpGatewayError:
-                logger.warning("set_attack_profile failed or not exposed — continuing")
+        logger.info("Setting attack profile: %s", args.profile)
+        try:
+            res = c.call_tool("set_attack_profile", {"profile": args.profile})
+            logger.info("set_attack_profile ok")
+            logger.info(_summarize_response(res))
+        except McpGatewayError:
+            logger.warning("set_attack_profile failed or not exposed — continuing")
 
         if args.tool_args:
             tool_args = json.loads(args.tool_args)
