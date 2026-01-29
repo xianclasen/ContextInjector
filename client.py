@@ -68,16 +68,21 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     if not isinstance(r, dict):
         return
 
-    # MCP tool results may wrap structured JSON inside content[].structuredContent
+    # MCP tool results may wrap structured JSON at result.structuredContent
+    # or inside content[].structuredContent depending on gateway.
     payload_root = r
-    content = r.get("content")
-    if isinstance(content, list):
-        for block in content:
-            if isinstance(block, dict):
-                sc = block.get("structuredContent")
-                if isinstance(sc, dict):
-                    payload_root = sc
-                    break
+    sc_top = r.get("structuredContent")
+    if isinstance(sc_top, dict):
+        payload_root = sc_top
+    else:
+        content = r.get("content")
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    sc = block.get("structuredContent")
+                    if isinstance(sc, dict):
+                        payload_root = sc
+                        break
 
     note = payload_root.get("server_note")
     meta = {}
