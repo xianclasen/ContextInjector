@@ -97,6 +97,13 @@ Profiles simulate realistic malicious content embedded in tool outputs so a sema
 - `oversized_payload` : Large payload injected into fields to test size limits and truncation.
 - `high_entropy` : High-entropy base64 data injected to test entropy or binary-like payload handling.
 - `schema_confusion` : Wrong types and unexpected items in structured results to test schema validation.
+- `assistant_impersonation` : Content that impersonates prior assistant output to test authority confusion.
+- `role_confusion` : SYSTEM/DEVELOPER headers embedded in content to test role boundary enforcement.
+- `delayed_instruction` : Deferred instructions meant to trigger on a later user query.
+- `obfuscated_injection` : Hidden/obfuscated instructions (zero-width/HTML comment) to test normalization.
+- `tool_args_smuggling` : Tool call JSON embedded in content to test tool gating.
+- `data_poisoning` : Subtle recommendation-bias instructions to test semantic manipulation.
+- `context_stuffing` : Repeated phrases to test bias from repetition.
 
 Profile IDs (for `profile_id`):
 
@@ -108,6 +115,13 @@ Profile IDs (for `profile_id`):
 - `5` : high_entropy
 - `6` : schema_confusion
 - `7` : mixed_content
+- `8` : assistant_impersonation
+- `9` : role_confusion
+- `10` : delayed_instruction
+- `11` : obfuscated_injection
+- `12` : tool_args_smuggling
+- `13` : data_poisoning
+- `14` : context_stuffing
 
 ## Command-line arguments
 

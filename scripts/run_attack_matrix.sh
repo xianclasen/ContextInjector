@@ -25,6 +25,13 @@ PROFILES=(
   high_entropy
   schema_confusion
   mixed_content
+  assistant_impersonation
+  role_confusion
+  delayed_instruction
+  obfuscated_injection
+  tool_args_smuggling
+  data_poisoning
+  context_stuffing
 )
 
 profile_id_for() {
@@ -37,6 +44,13 @@ profile_id_for() {
     high_entropy) echo "5" ;;
     schema_confusion) echo "6" ;;
     mixed_content) echo "7" ;;
+    assistant_impersonation) echo "8" ;;
+    role_confusion) echo "9" ;;
+    delayed_instruction) echo "10" ;;
+    obfuscated_injection) echo "11" ;;
+    tool_args_smuggling) echo "12" ;;
+    data_poisoning) echo "13" ;;
+    context_stuffing) echo "14" ;;
     *) echo "255" ;;
   esac
 }
@@ -51,6 +65,13 @@ severity_for_profile() {
     high_entropy) echo "MEDIUM" ;;
     schema_confusion) echo "MEDIUM" ;;
     mixed_content) echo "MEDIUM" ;;
+    assistant_impersonation) echo "HIGH" ;;
+    role_confusion) echo "HIGH" ;;
+    delayed_instruction) echo "MEDIUM" ;;
+    obfuscated_injection) echo "HIGH" ;;
+    tool_args_smuggling) echo "HIGH" ;;
+    data_poisoning) echo "MEDIUM" ;;
+    context_stuffing) echo "MEDIUM" ;;
     *) echo "UNKNOWN" ;;
   esac
 }
