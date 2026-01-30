@@ -88,14 +88,14 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
     meta = {}
     if isinstance(note, dict):
         meta = note.get("meta") or {}
-        profile = meta.get("attack_profile")
+        profile_id = meta.get("attack_profile_id")
         req_id = meta.get("attack_request_id")
-        if profile:
+        if profile_id is not None:
             logger = logging.getLogger("mcp_client")
             if req_id:
-                logger.info("Attack profile: %s (request=%s)", profile, req_id)
+                logger.info("Attack profile id: %s (request=%s)", profile_id, req_id)
             else:
-                logger.info("Attack profile: %s", profile)
+                logger.info("Attack profile id: %s", profile_id)
     items = payload_root.get("items")
     if not isinstance(items, list) or not items:
         return
@@ -138,20 +138,20 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
             if meta and meta.get("attack_request_id"):
                 if fields:
                     logger.info(
-                        " - item[%d]: %s  (profile=%s, request=%s) fields=%s payload=%s",
+                        " - item[%d]: %s  (profile_id=%s, request=%s) fields=%s payload=%s",
                         idx,
                         short,
-                        meta.get("attack_profile"),
+                        meta.get("attack_profile_id"),
                         meta.get("attack_request_id"),
                         ",".join(fields),
                         payload or "",
                     )
                 else:
                     logger.info(
-                        " - item[%d]: %s  (profile=%s, request=%s) payload=%s",
+                        " - item[%d]: %s  (profile_id=%s, request=%s) payload=%s",
                         idx,
                         short,
-                        meta.get("attack_profile"),
+                        meta.get("attack_profile_id"),
                         meta.get("attack_request_id"),
                         payload or "",
                     )

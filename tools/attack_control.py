@@ -2,19 +2,22 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from models import VALID_PROFILES, AppState
+from models import PROFILE_ID_TO_NAME, PROFILE_NAME_TO_ID, AppState
 
 
 def register_attack_control_tools(mcp: Any, state: AppState) -> None:
     @mcp.tool()
     def list_attack_profiles() -> Dict[str, Any]:
-        return {"profiles": sorted(VALID_PROFILES), "default": "baseline"}
+        return {
+            "profiles": sorted(PROFILE_ID_TO_NAME),
+            "default": PROFILE_NAME_TO_ID["baseline"],
+        }
 
     @mcp.tool()
     def get_attack_profile() -> Dict[str, Any]:
         c = state.attack_controller
         return {
-            "profile": c.profile,
+            "profile_id": PROFILE_NAME_TO_ID.get(c.profile),
             "updated_at_epoch_s": c.updated_at_epoch_s,
             "last_request_id": c.last_request_id,
             "injection_enabled": state.inj_cfg.enabled,
@@ -32,9 +35,14 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
         }
 
     @mcp.tool()
-    def set_attack_profile(profile: str) -> Dict[str, Any]:
+    def set_attack_profile(profile_id: int) -> Dict[str, Any]:
+        profile = PROFILE_ID_TO_NAME.get(int(profile_id))
+        if not profile:
+            raise ValueError(
+                f"Invalid profile_id '{profile_id}'. Valid: {sorted(PROFILE_ID_TO_NAME)}"
+            )
         state.attack_controller.set_profile(profile)
-        return {"ok": True, "profile": state.attack_controller.profile}
+        return {"ok": True, "profile_id": PROFILE_NAME_TO_ID.get(profile)}
 
     @mcp.tool()
     def set_injection_enabled(enabled: bool) -> Dict[str, Any]:
@@ -69,4 +77,7 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
     @mcp.tool()
     def reset_attack_profile() -> Dict[str, Any]:
         state.attack_controller.set_profile("baseline")
-        return {"ok": True, "profile": state.attack_controller.profile}
+        return {
+            "ok": True,
+            "profile_id": PROFILE_NAME_TO_ID.get(state.attack_controller.profile),
+        }

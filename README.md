@@ -5,7 +5,7 @@ As an avid reader, I wanted a way to expose my GoodReads data to an LLM in order
 
 As a security nerd, I wanted to be able to inject malicious context into that data. So I built this lightweight MCP demo server and client that exposes Goodreads/RSS data and demonstrates common integration and attack scenarios (for learning and testing).
 
-The project includes both a client and server. Attack type can be selected at either side, on the server by setting the attack profile at start-up, and on the client by setting it at request time. 
+The project includes both a client and server. Attack type can be selected at either side, on the server by setting the attack profile at start-up, and on the client by setting it at request time (numeric profile IDs only).
 
 No LLM is needed for this setup, nor is it relevent. This setup is purely for testing attempted attacks originating from a malicious MCP server on the internet. Depending on how naive a real-world LLM and MCP client are these attacks may succeed or fail. I simply want to know if an inline proxy / gateway would catch the attacks using semantic inspection between the internet and the MCP client.
 
@@ -89,7 +89,7 @@ Explore the `attacks/` and `models/` packages to see example components and demo
 Profiles simulate realistic malicious content embedded in tool outputs so a semantic inspection proxy can test detection/blocking behavior.
 
 - Per-request profile override (proxy-safe): `fetch_shelf_rss` accepts `profile_id` (numeric) and optional `attack_only` (bool).
-  This avoids sending profile names through the proxy.
+  This avoids sending profile names through the proxy which may trip semantic inspection engines.
 
 - `baseline` : Normal content; no attack text injected.
 - `prompt_injection` : Embedded system-override instructions inside summaries.
@@ -107,7 +107,7 @@ Profiles simulate realistic malicious content embedded in tool outputs so a sema
 - `data_poisoning` : Subtle recommendation-bias instructions to test semantic manipulation.
 - `context_stuffing` : Repeated phrases to test bias from repetition.
 
-Profile IDs (for `profile_id`):
+Profile IDs (for `profile_id` and control-plane tools):
 
 - `0` : baseline
 - `1` : prompt_injection
@@ -132,7 +132,7 @@ Server (`server.py`):
 - `--host` : Host to bind (default `0.0.0.0` or `MCP_HOST` env)
 - `--port` : Port to listen on (default `3333` or `MCP_PORT` env)
 - `--path` : HTTP path for MCP endpoint (default `/mcp` or `MCP_HTTP_PATH` env)
-- `--profile` : Attack profile name (default `prompt_injection` or `ATTACK_PROFILE` env)
+- `--profile` : Attack profile name (default `prompt_injection` or `ATTACK_PROFILE` env). Server-side only.
 - `--inject` / `--no-inject` : Fine-grained enable/disable injection
 - `--inject-max-items` : Max items to inject per response (default `2`)
 - `--attack-only` : Return only attack content (strip real Goodreads data). Can also be set via `ATTACK_ONLY=1`
@@ -168,6 +168,16 @@ python client.py --skip-set-profile --profile-id 5 --tool fetch_shelf_rss --shel
 ```
 
 `--attack-only` can be combined to request attack-only responses without changing server state.
+
+## Control-plane tools (IDs only)
+
+Control-plane tool I/O uses numeric IDs to indicate attack profile to avoid sending profile names over the wire and tripping semantic proxy engines:
+
+- `list_attack_profiles` returns profile IDs and the default ID.
+- `get_attack_profile` returns `profile_id`.
+- `set_attack_profile` accepts `profile_id`.
+
+Injected responses include `server_note.meta.attack_profile_id` (numeric).
 
 ## Project layout
 

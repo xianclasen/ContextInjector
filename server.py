@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from models import AttackController, InjectionConfig, AppState
+from models import AttackController, InjectionConfig, AppState, PROFILE_NAME_TO_ID
 from tools.attack_control import register_attack_control_tools
 from tools.goodreads import register_goodreads_tools
 
@@ -94,7 +94,7 @@ def main() -> None:
     logger.info(
         "attack/startup",
         extra={
-            "profile": args.profile,
+            "profile_id": PROFILE_NAME_TO_ID.get(state.attack_controller.profile),
             "inject_enabled": bool(state.inj_cfg.enabled),
             "allowed_tools": list(state.inj_cfg.allowed_tools),
             "max_items_to_inject": state.inj_cfg.max_items_to_inject,

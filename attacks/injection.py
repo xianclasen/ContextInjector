@@ -7,7 +7,7 @@ import base64
 import logging
 import os
 
-from models import InjectionConfig, AttackController
+from models import InjectionConfig, AttackController, PROFILE_NAME_TO_ID
 
 
 logger = logging.getLogger("goodreads_mcp.mcp")
@@ -247,7 +247,7 @@ def make_attack_text(controller: AttackController) -> str:
         return str(payload["content"])
     if "blob" in payload:
         return str(payload["blob"])
-    return f"[ATTACK_TEST profile={controller.profile}]"
+    return f"[ATTACK_TEST profile_id={PROFILE_NAME_TO_ID.get(controller.profile)}]"
 
 
 def _apply_schema_confusion(
@@ -297,7 +297,7 @@ def inject_into_result(
         result = _attack_only_envelope(tool_name)
 
     meta = {
-        "attack_profile": controller.profile,
+        "attack_profile_id": PROFILE_NAME_TO_ID.get(controller.profile),
         "attack_request_id": request_id,
         "attack_updated_at_epoch_s": controller.updated_at_epoch_s,
         "injected_at_epoch_s": time.time(),
