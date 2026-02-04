@@ -164,15 +164,3 @@ def setup_logging(service_name: str) -> None:
         extra={"service": service_name, "log_level": level_name},
     )
 
-
-class Timer:
-    def __init__(self) -> None:
-        self._start = 0.0
-        self.ms = 0.0
-
-    def __enter__(self) -> "Timer":
-        self._start = time.perf_counter()
-        return self
-
-    def __exit__(self, exc_type, exc, tb) -> None:
-        self.ms = (time.perf_counter() - self._start) * 1000.0
