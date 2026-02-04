@@ -11,7 +11,8 @@ import atexit
 import httpx
 
 from attacks.injection import inject_into_result
-from models import AppState, AttackController, PROFILE_ID_TO_NAME
+from models import AppState, AttackController
+from models.attack_profiles import PROFILE_ID_TO_NAME
 from utils.text import clean_text
 
 

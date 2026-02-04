@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
-from models import AttackController, InjectionConfig, AppState, PROFILE_NAME_TO_ID
+from models import AttackController, InjectionConfig, AppState
+from models.attack_profiles import PROFILE_NAME_TO_ID
 from tools.attack_control import register_attack_control_tools
 from tools.goodreads import register_goodreads_tools
 

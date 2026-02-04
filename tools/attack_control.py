@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from models import PROFILE_ID_TO_NAME, PROFILE_NAME_TO_ID, AppState
+from models import AppState
+from models.attack_profiles import PROFILE_ID_TO_NAME, PROFILE_NAME_TO_ID
 
 
 def register_attack_control_tools(mcp: Any, state: AppState) -> None:

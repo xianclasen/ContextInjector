@@ -1,9 +1,5 @@
-from .attack_controller import (
-    AttackController,
-    VALID_PROFILES,
-    PROFILE_ID_TO_NAME,
-    PROFILE_NAME_TO_ID,
-)
+from .attack_controller import AttackController
+from .attack_profiles import VALID_PROFILES, PROFILE_ID_TO_NAME, PROFILE_NAME_TO_ID
 from .injection import InjectionConfig
 from .app_state import AppState
 

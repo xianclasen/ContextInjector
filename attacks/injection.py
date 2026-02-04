@@ -7,7 +7,8 @@ import base64
 import logging
 import os
 
-from models import InjectionConfig, AttackController, PROFILE_NAME_TO_ID
+from models import InjectionConfig, AttackController
+from models.attack_profiles import PROFILE_NAME_TO_ID
 from utils.text import one_line
 
 
