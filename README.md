@@ -151,7 +151,6 @@ Client (`client.py`):
 - `--http2` : Enable HTTP/2
 - `--timeout` : Request timeout seconds (default `20.0`)
 - `--insecure` : Disable TLS verification
-- `--skip-set-profile` : Do not call `set_attack_profile` (use server-side profile or per-request `profile_id`)
 - `--profile-id` : Numeric profile id passed as tool arg (proxy-safe)
 - `--attack-only` : Request attack-only tool output (per-request override)
 - `--tool` : Tool name to call (default `fetch_shelf_rss`)
@@ -164,7 +163,7 @@ Client (`client.py`):
 To avoid proxy blocks on `set_attack_profile`, pass the numeric profile id on the tool call:
 
 ```bash
-python client.py --skip-set-profile --profile-id 5 --tool fetch_shelf_rss --shelf read --limit 5
+python client.py --profile-id 5 --tool fetch_shelf_rss --shelf read --limit 5
 ```
 
 `--attack-only` can be combined to request attack-only responses without changing server state.

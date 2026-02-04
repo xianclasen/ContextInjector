@@ -329,11 +329,6 @@ def main() -> None:
     ap.add_argument("--insecure", action="store_true", help="Disable TLS verification")
 
     ap.add_argument(
-        "--skip-set-profile",
-        action="store_true",
-        help="Do not call set_attack_profile (use server-side profile config)",
-    )
-    ap.add_argument(
         "--profile-id",
         type=int,
         help="Numeric profile id to pass as tool arg (avoids set_attack_profile)",
@@ -373,9 +368,6 @@ def main() -> None:
             logger.info(_summarize_response(tools))
         except McpGatewayError:
             logger.warning("tools/list failed or blocked — continuing")
-
-        if args.skip_set_profile:
-            logger.info("Skipping set_attack_profile (server-side profile expected)")
 
         if args.tool_args:
             tool_args = json.loads(args.tool_args)
