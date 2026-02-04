@@ -7,6 +7,7 @@ from email.utils import parsedate_to_datetime
 from dataclasses import replace
 from typing import Any, Dict, List, Optional, Sequence
 
+import atexit
 import httpx
 
 from attacks.injection import inject_into_result
@@ -15,6 +16,7 @@ from utils.text import clean_text
 
 
 DEFAULT_TIMEOUT_S = 20.0
+_HTTP_CLIENT: Optional[httpx.Client] = None
 
 
 def _env_required(name: str) -> str:
@@ -66,10 +68,18 @@ def _fetch_rss_xml(url: str) -> str:
         "User-Agent": os.getenv("GOODREADS_USER_AGENT", "ContextInjector/1.0"),
         "Accept": "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.1",
     }
-    with httpx.Client(timeout=httpx.Timeout(DEFAULT_TIMEOUT_S)) as client:
-        r = client.get(url, headers=headers, follow_redirects=True)
-        r.raise_for_status()
-        return r.text
+    client = _get_http_client()
+    r = client.get(url, headers=headers, follow_redirects=True)
+    r.raise_for_status()
+    return r.text
+
+
+def _get_http_client() -> httpx.Client:
+    global _HTTP_CLIENT
+    if _HTTP_CLIENT is None:
+        _HTTP_CLIENT = httpx.Client(timeout=httpx.Timeout(DEFAULT_TIMEOUT_S))
+        atexit.register(_HTTP_CLIENT.close)
+    return _HTTP_CLIENT
 
 
 def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
