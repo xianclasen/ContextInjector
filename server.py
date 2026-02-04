@@ -63,6 +63,17 @@ def parse_args() -> argparse.Namespace:
         help="Max items to inject per response",
     )
     p.add_argument(
+        "--single-field",
+        action="store_true",
+        default=os.getenv("ATTACK_SINGLE_FIELD", "1") == "1",
+        help="Inject into only one field per output",
+    )
+    p.add_argument(
+        "--multi-field",
+        action="store_true",
+        help="Inject into all enabled fields per output",
+    )
+    p.add_argument(
         "--attack-only",
         action="store_true",
         default=os.getenv("ATTACK_ONLY", "0") == "1",
@@ -86,6 +97,9 @@ def main() -> None:
     else:
         state.inj_cfg.enabled = bool(args.inject)
     state.inj_cfg.max_items_to_inject = max(0, int(args.inject_max_items))
+    state.inj_cfg.single_field_per_output = (
+        False if args.multi_field else bool(args.single_field)
+    )
     state.inj_cfg.attack_only = bool(args.attack_only)
 
     setup_logging("goodreads_mcp.mcp")
@@ -98,6 +112,7 @@ def main() -> None:
             "inject_enabled": bool(state.inj_cfg.enabled),
             "allowed_tools": list(state.inj_cfg.allowed_tools),
             "max_items_to_inject": state.inj_cfg.max_items_to_inject,
+            "single_field_per_output": state.inj_cfg.single_field_per_output,
             "inject_into_summary": state.inj_cfg.inject_into_summary,
             "inject_into_description": state.inj_cfg.inject_into_description,
             "inject_into_title": state.inj_cfg.inject_into_title,

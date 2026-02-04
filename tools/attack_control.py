@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from models import PROFILE_ID_TO_NAME, PROFILE_NAME_TO_ID, AppState
 
@@ -21,6 +21,7 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
             "updated_at_epoch_s": c.updated_at_epoch_s,
             "last_request_id": c.last_request_id,
             "injection_enabled": state.inj_cfg.enabled,
+            "single_field_per_output": state.inj_cfg.single_field_per_output,
             "inject_tools": sorted(state.inj_cfg.allowed_tools)
             if state.inj_cfg.allowed_tools
             else ["*"],
@@ -53,6 +54,7 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
     def set_injection_scope(
         inject_tools: str = "",
         max_items: int = 2,
+        single_field_per_output: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         inject_tools: comma-separated list. empty => all tools
@@ -66,12 +68,15 @@ def register_attack_control_tools(mcp: Any, state: AppState) -> None:
             }
 
         state.inj_cfg.max_items_to_inject = max(0, int(max_items))
+        if single_field_per_output is not None:
+            state.inj_cfg.single_field_per_output = bool(single_field_per_output)
         return {
             "ok": True,
             "inject_tools": sorted(state.inj_cfg.allowed_tools)
             if state.inj_cfg.allowed_tools
             else ["*"],
             "max_items": state.inj_cfg.max_items_to_inject,
+            "single_field_per_output": state.inj_cfg.single_field_per_output,
         }
 
     @mcp.tool()

@@ -135,6 +135,8 @@ Server (`server.py`):
 - `--profile` : Attack profile name (default `prompt_injection` or `ATTACK_PROFILE` env). Server-side only.
 - `--inject` / `--no-inject` : Fine-grained enable/disable injection
 - `--inject-max-items` : Max items to inject per response (default `2`)
+- `--single-field` : Inject into only one field per output (default, or `ATTACK_SINGLE_FIELD=1`)
+- `--multi-field` : Inject into all enabled fields per output
 - `--attack-only` : Return only attack content (strip real Goodreads data). Can also be set via `ATTACK_ONLY=1`
 - `--disable-control-plane-tools` : Disable control plane tools registration
 
@@ -175,6 +177,7 @@ Control-plane tool I/O uses numeric IDs to indicate attack profile to avoid send
 - `list_attack_profiles` returns profile IDs and the default ID.
 - `get_attack_profile` returns `profile_id`.
 - `set_attack_profile` accepts `profile_id`.
+- `set_injection_scope` accepts `single_field_per_output` (bool).
 
 Injected responses include `server_note.meta.attack_profile_id` (numeric).
 
