@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 import os
 import re
 from datetime import timezone
@@ -12,6 +11,7 @@ import httpx
 
 from attacks.injection import inject_into_result
 from models import AppState, AttackController, PROFILE_ID_TO_NAME
+from utils.text import clean_text
 
 
 DEFAULT_TIMEOUT_S = 20.0
@@ -22,18 +22,6 @@ def _env_required(name: str) -> str:
     if not val:
         raise RuntimeError(f"Missing required env var: {name}")
     return val
-
-
-def _normalize_ws(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip()
-
-
-def _clean_text(s: Optional[str]) -> str:
-    if not s:
-        return ""
-    s = html.unescape(s)
-    s = re.sub(r"<[^>]+>", "", s)
-    return _normalize_ws(s)
 
 
 def _parse_rfc822_dt(s: Optional[str]) -> Optional[str]:
@@ -108,7 +96,7 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
     for ch in channel:
         ln = _localname(ch.tag)
         if ln in ("title", "link", "description", "language", "lastBuildDate"):
-            channel_meta[ln] = _clean_text(ch.text)
+            channel_meta[ln] = clean_text(ch.text)
 
     items: List[Dict[str, Any]] = []
     for it in channel.findall("item"):
@@ -119,27 +107,27 @@ def _parse_goodreads_rss(xml_text: str) -> Dict[str, Any]:
             txt = child.text or ""
             tmp[ln] = txt
 
-        data["guid"] = _clean_text(tmp.get("guid"))
-        data["link"] = _clean_text(tmp.get("link"))
+        data["guid"] = clean_text(tmp.get("guid"))
+        data["link"] = clean_text(tmp.get("link"))
         data["pubDate"] = _parse_rfc822_dt(tmp.get("pubDate"))
-        data["title_raw"] = _clean_text(tmp.get("title"))
-        data["description"] = _clean_text(tmp.get("description"))
+        data["title_raw"] = clean_text(tmp.get("title"))
+        data["description"] = clean_text(tmp.get("description"))
 
-        data["book_id"] = _clean_text(tmp.get("book_id") or tmp.get("bookid"))
-        data["book_title"] = _clean_text(tmp.get("book_title") or tmp.get("booktitle"))
-        data["author_name"] = _clean_text(
+        data["book_id"] = clean_text(tmp.get("book_id") or tmp.get("bookid"))
+        data["book_title"] = clean_text(tmp.get("book_title") or tmp.get("booktitle"))
+        data["author_name"] = clean_text(
             tmp.get("author_name") or tmp.get("authorname")
         )
-        data["user_date_added"] = _clean_text(tmp.get("user_date_added"))
-        data["user_date_updated"] = _clean_text(tmp.get("user_date_updated"))
+        data["user_date_added"] = clean_text(tmp.get("user_date_added"))
+        data["user_date_updated"] = clean_text(tmp.get("user_date_updated"))
 
         title = data["book_title"] or data["title_raw"]
         author = data["author_name"]
         if not author and data["title_raw"]:
             m = re.match(r"^(.*)\s+by\s+(.*)$", data["title_raw"])
             if m:
-                title = _clean_text(m.group(1))
-                author = _clean_text(m.group(2))
+                title = clean_text(m.group(1))
+                author = clean_text(m.group(2))
 
         data["title"] = title
         data["author"] = author
@@ -240,8 +228,8 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
             items = parsed["items"][: max(0, int(limit_per_shelf))]
 
             for it in items:
-                title = _clean_text(it.get("title"))
-                author = _clean_text(it.get("author"))
+                title = clean_text(it.get("title"))
+                author = clean_text(it.get("author"))
                 if not title:
                     continue
                 key = _normalize_key(title, author)

@@ -8,14 +8,10 @@ import logging
 import os
 
 from models import InjectionConfig, AttackController, PROFILE_NAME_TO_ID
+from utils.text import one_line
 
 
 logger = logging.getLogger("goodreads_mcp.mcp")
-
-def _one_line(s: str, max_len: int = 240) -> str:
-    flat = " ".join(str(s).split())
-    return flat if len(flat) <= max_len else flat[:max_len] + "…"
-
 
 def _baseline_payload() -> Dict[str, Any]:
     return {
@@ -309,7 +305,7 @@ def inject_into_result(
         controller.profile,
         request_id,
         tool_name,
-        _one_line(attack_text),
+        one_line(attack_text),
     )
 
     result["server_note"] = {
@@ -378,7 +374,7 @@ def inject_into_result(
                         0,
                         ",".join(injected_fields),
                         short_title,
-                        _one_line(attack_text),
+                        one_line(attack_text),
                     )
                     return result
 
@@ -446,7 +442,7 @@ def inject_into_result(
                     i,
                     ",".join(injected_fields),
                     short_title,
-                    _one_line(attack_text),
+                    one_line(attack_text),
                 )
 
     return result

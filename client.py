@@ -7,24 +7,17 @@ import httpx
 import logging
 
 from logutils.formatters import setup_logging
+from utils.text import one_line, truncate
 
 
 def _mk_id() -> str:
     return str(uuid.uuid4())
 
 
-def _truncate(s: str, n: int = 6000) -> str:
-    return s if len(s) <= n else s[:n] + "\n…(truncated)…"
-
-def _one_line(s: str, n: int = 240) -> str:
-    flat = " ".join(str(s).split())
-    return flat if len(flat) <= n else flat[:n] + "…"
-
-
 def _summarize_response(resp: Dict[str, Any]) -> str:
     """Return a short one-line summary for a JSON-RPC response dict."""
     if not isinstance(resp, dict):
-        return _truncate(str(resp), 200)
+        return truncate(str(resp), 200)
 
     if resp.get("error"):
         err = resp["error"]
@@ -46,14 +39,14 @@ def _summarize_response(resp: Dict[str, Any]) -> str:
                 return f"items: {len(r['items'])}"
             parts = []
             for k, v in list(r.items())[:6]:
-                vs = _truncate(str(v), 120).replace("\n", " ")
+                vs = truncate(str(v), 120).replace("\n", " ")
                 parts.append(f"{k}={vs}")
             return ", ".join(parts) if parts else "(empty result)"
         if isinstance(r, list):
             return f"result: list[{len(r)}]"
-        return _truncate(str(r), 200)
+        return truncate(str(r), 200)
 
-    return _truncate(json.dumps(resp, separators=(",", ":"), ensure_ascii=False), 400)
+    return truncate(json.dumps(resp, separators=(",", ":"), ensure_ascii=False), 400)
 
 
 def _report_injected_items(resp: Dict[str, Any]) -> None:
@@ -126,14 +119,14 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
         logger.info("Injected items detected:")
         for idx, it, meta in injected:
             title = it.get("book_title") or it.get("title") or "(no title)"
-            short = _truncate(str(title), 200).replace("\n", " ")
+            short = truncate(str(title), 200).replace("\n", " ")
             payload = None
             fields = meta.get("injected_fields") if isinstance(meta.get("injected_fields"), list) else None
             if fields:
                 for key in fields:
                     v = it.get(key)
                     if isinstance(v, str):
-                        payload = _one_line(v)
+                        payload = one_line(v)
                         break
             if meta and meta.get("attack_request_id"):
                 if fields:
@@ -177,7 +170,7 @@ def _report_injected_items(resp: Dict[str, Any]) -> None:
             for key in fields:
                 v = it.get(key)
                 if isinstance(v, str):
-                    payload = _one_line(v)
+                    payload = one_line(v)
                     break
             if payload:
                 logger.info(
@@ -199,7 +192,7 @@ def _parse_sse_first_json(body_text: str) -> Dict[str, Any]:
             if data:
                 return json.loads(data)
     raise McpGatewayError(
-        f"SSE response had no data: lines.\nBody:\n{_truncate(body_text)}"
+        f"SSE response had no data: lines.\nBody:\n{truncate(body_text)}"
     )
 
 
@@ -251,14 +244,14 @@ class McpHttpClient:
                             f"{json.dumps(msg['error'], indent=2)}"
                         )
                     raise McpGatewayError(
-                        f"[HTTP ERROR] HTTP {resp.status_code} method={method}\n{_truncate(json.dumps(msg, indent=2))}"
+                        f"[HTTP ERROR] HTTP {resp.status_code} method={method}\n{truncate(json.dumps(msg, indent=2))}"
                     )
                 except json.JSONDecodeError:
                     pass
             raise McpGatewayError(
                 f"[BLOCKED/ERROR] HTTP {resp.status_code} method={method}\n"
                 f"Content-Type: {ct or '<none>'}\n"
-                f"Body:\n{_truncate(text)}"
+                f"Body:\n{truncate(text)}"
             )
 
         if "application/json" in ct:
@@ -268,7 +261,7 @@ class McpHttpClient:
             return _parse_sse_first_json(resp.text)
 
         raise McpGatewayError(
-            f"Unexpected Content-Type for method={method}: {ct!r}\nBody:\n{_truncate(resp.text)}"
+            f"Unexpected Content-Type for method={method}: {ct!r}\nBody:\n{truncate(resp.text)}"
         )
 
     def call(
@@ -295,7 +288,7 @@ class McpHttpClient:
         resp = self._client.post(self.url, json=payload, headers=self._headers())
         if resp.status_code >= 400:
             raise McpGatewayError(
-                f"[HTTP ERROR] HTTP {resp.status_code} method={method}\nBody:\n{_truncate(resp.text)}"
+                f"[HTTP ERROR] HTTP {resp.status_code} method={method}\nBody:\n{truncate(resp.text)}"
             )
 
     def initialize(self) -> Dict[str, Any]:
