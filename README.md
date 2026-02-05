@@ -1,24 +1,29 @@
 
 # ContextInjector
 
+A joint MCP client and server framework for testing semantic inspection engines for efficacy.
+
+## Purpose
+
 As an avid reader, I wanted a way to expose my GoodReads data to an LLM in order to get book recommendations that fit my tastes.
 
 As a security nerd, I wanted to be able to inject malicious context into that data. So I built this lightweight MCP demo server and client that exposes Goodreads/RSS data and demonstrates common integration and attack scenarios (for learning and testing).
 
-The project includes both a client and server. Attack type can be selected at either side, on the server by setting the attack profile at start-up, and on the client by setting it at request time (numeric profile IDs only).
-
 No LLM is needed for this setup, nor is it relevent. This setup is purely for testing attempted attacks originating from a malicious MCP server on the internet. Depending on how naive a real-world LLM and MCP client are these attacks may succeed or fail. I simply want to know if an inline proxy / gateway would catch the attacks using semantic inspection between the internet and the MCP client.
-
-## Purpose
 
 This project is a small demonstration of an MCP-based service that fetches and exposes book-related data (via RSS/Goodreads integration), includes logging, and contains examples of attack vectors. The main driver for me was to test semantic inspection proxies for efficacy.
 
 ## Features
 
-- MCP server and client example interfaces
-- Goodreads/RSS fetching utilities
-- Logging examples
-- Attack demonstration modules (injection control)
+The project includes both a client and server. Attack type can be selected at either side, on the server by setting the attack profile at start-up, and/or on the client by setting it at request time.
+
+Tools exist on the server for both retreiving legitimate data, and optionally for control plane configuration of attack types (listed below).
+
+This means that the client can naively send requests to the server, which is configured on startup with a certain attack configuration, or the client can set/override the server settings within a request.
+
+Metadata is used to track requests on both sides and which attacks were enabled.
+
+The provided `scripts/run_attack_matrix.sh` will run all combintations of attacks and generate a report on what was blocked or allowed.
 
 ## Prerequisites
 
@@ -86,9 +91,9 @@ Explore the `attacks/` and `models/` packages to see example components and demo
 
 ## Attack profiles
 
-Profiles simulate realistic malicious content embedded in tool outputs so a semantic inspection proxy can test detection/blocking behavior.
+Profiles simulate realistic malicious content embedded in tool outputs, or optionally sent back as full replacement for tool output (`attack-only`).
 
-- Per-request profile override (proxy-safe): `fetch_shelf_rss` accepts `profile_id` (numeric) and optional `attack_only` (bool).
+- Per-request profile override: `fetch_shelf_rss` accepts `profile_id` (numeric) and optional `attack_only` (bool).
   This avoids sending profile names through the proxy which may trip semantic inspection engines.
 
 - `baseline` : Normal content; no attack text injected.
@@ -159,16 +164,6 @@ Client (`client.py`):
 - `--shelf` : Shelf name used by default tool args (default `read`)
 - `--limit` : Limit for default tool args (default `20`)
 - `--tool-args` : Raw JSON string to use as tool arguments (overrides `--shelf`/`--limit`)
-
-## Proxy-safe per-request profiles
-
-To avoid proxy blocks on `set_attack_profile`, pass the numeric profile id on the tool call:
-
-```bash
-python client.py --profile-id 5 --tool fetch_shelf_rss --shelf read --limit 5
-```
-
-`--attack-only` can be combined to request attack-only responses without changing server state.
 
 ## Control-plane tools (IDs only)
 
