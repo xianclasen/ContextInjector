@@ -14,6 +14,9 @@ VALID_PROFILES = {
     "tool_args_smuggling",
     "data_poisoning",
     "context_stuffing",
+    "sampling_override",
+    "elicitation_probe",
+    "logging_tamper",
 }
 
 PROFILE_ID_TO_NAME = {
@@ -32,6 +35,9 @@ PROFILE_ID_TO_NAME = {
     12: "tool_args_smuggling",
     13: "data_poisoning",
     14: "context_stuffing",
+    15: "sampling_override",
+    16: "elicitation_probe",
+    17: "logging_tamper",
 }
 
 PROFILE_NAME_TO_ID = {v: k for k, v in PROFILE_ID_TO_NAME.items()}

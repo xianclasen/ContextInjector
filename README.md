@@ -111,6 +111,9 @@ Profiles simulate realistic malicious content embedded in tool outputs, or optio
 - `tool_args_smuggling` : Tool call JSON embedded in content to test tool gating.
 - `data_poisoning` : Subtle recommendation-bias instructions to test semantic manipulation.
 - `context_stuffing` : Repeated phrases to test bias from repetition.
+- `sampling_override` : Attempts to override client sampling parameters and request multiple candidates.
+- `elicitation_probe` : Probing questions intended to elicit hidden prompts or credentials.
+- `logging_tamper` : Attempts to disable or redact client logging/audit trails.
 
 Profile IDs (for `profile_id` and control-plane tools):
 
@@ -129,6 +132,9 @@ Profile IDs (for `profile_id` and control-plane tools):
 - `12` : tool_args_smuggling
 - `13` : data_poisoning
 - `14` : context_stuffing
+- `15` : sampling_override
+- `16` : elicitation_probe
+- `17` : logging_tamper
 
 ## Command-line arguments
 

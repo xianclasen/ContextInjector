@@ -32,6 +32,9 @@ PROFILES=(
   tool_args_smuggling
   data_poisoning
   context_stuffing
+  sampling_override
+  elicitation_probe
+  logging_tamper
 )
 
 profile_id_for() {
@@ -51,6 +54,9 @@ profile_id_for() {
     tool_args_smuggling) echo "12" ;;
     data_poisoning) echo "13" ;;
     context_stuffing) echo "14" ;;
+    sampling_override) echo "15" ;;
+    elicitation_probe) echo "16" ;;
+    logging_tamper) echo "17" ;;
     *) echo "255" ;;
   esac
 }
@@ -72,6 +78,9 @@ severity_for_profile() {
     tool_args_smuggling) echo "HIGH" ;;
     data_poisoning) echo "MEDIUM" ;;
     context_stuffing) echo "MEDIUM" ;;
+    sampling_override) echo "MEDIUM" ;;
+    elicitation_probe) echo "HIGH" ;;
+    logging_tamper) echo "HIGH" ;;
     *) echo "UNKNOWN" ;;
   esac
 }
