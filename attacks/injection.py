@@ -356,11 +356,6 @@ def inject_into_result(
         one_line(attack_text),
     )
 
-    result["server_note"] = {
-        "note": "ATTACK_SIMULATION",
-        "meta": meta,
-    }
-
     # Mangles the JSON schema in a way that may confuse parsers
     if controller.profile == "schema_confusion":
         return _apply_schema_confusion(result, payload)
