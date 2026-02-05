@@ -96,7 +96,6 @@ run_client() {
   uv run --python "$VENV_PY" -- python client.py \
     --url "$url" \
     --profile-id "$profile_id" \
-    $( [[ "$SKIP_SET_PROFILE" == "1" ]] && echo "--skip-set-profile" ) \
     $( [[ "$attack_only" == "1" ]] && echo "--attack-only" ) \
     --tool fetch_shelf_rss \
     --shelf read \
