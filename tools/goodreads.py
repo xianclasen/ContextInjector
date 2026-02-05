@@ -17,6 +17,8 @@ from utils.text import clean_text
 
 
 DEFAULT_TIMEOUT_S = 20.0
+# Used only when GOODREADS_USER_ID is unset and no user_id is provided.
+DEFAULT_GOODREADS_USER_ID = os.getenv("GOODREADS_DEFAULT_USER_ID", "182366515").strip()
 _HTTP_CLIENT: Optional[httpx.Client] = None
 
 
@@ -25,6 +27,17 @@ def _env_required(name: str) -> str:
     if not val:
         raise RuntimeError(f"Missing required env var: {name}")
     return val
+
+
+def _resolve_user_id(user_id: Optional[str]) -> str:
+    if user_id is None or str(user_id).strip() == "":
+        candidate = os.getenv("GOODREADS_USER_ID", "").strip() or DEFAULT_GOODREADS_USER_ID
+    else:
+        candidate = str(user_id).strip()
+
+    if not re.fullmatch(r"\d+", candidate):
+        raise ValueError("Invalid Goodreads user_id: expected digits.")
+    return candidate
 
 
 def _parse_rfc822_dt(s: Optional[str]) -> Optional[str]:
@@ -167,6 +180,7 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
     @mcp.tool()
     def fetch_shelf_rss(
         shelf: str,
+        user_id: Optional[str] = None,
         sort: str = "date_updated",
         order: str = "d",
         limit: int = 500,
@@ -175,9 +189,9 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
     ) -> Dict[str, Any]:
         """
         Fetch Goodreads shelf RSS and return parsed items.
-        Requires env GOODREADS_USER_ID
+        Uses provided user_id or defaults to GOODREADS_USER_ID (or fallback default).
         """
-        user_id = _env_required("GOODREADS_USER_ID")
+        user_id = _resolve_user_id(user_id)
 
         url = _build_rss_url(user_id=user_id, shelf=shelf, sort=sort, order=order)
         xml_text = _fetch_rss_xml(url)
@@ -218,6 +232,7 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
     @mcp.tool()
     def get_exclusion_set(
         shelves: Sequence[str] = ("read",),
+        user_id: Optional[str] = None,
         sort: str = "date_updated",
         order: str = "d",
         limit_per_shelf: int = 2000,
@@ -227,9 +242,9 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
           - normalized_keys: sorted list[str]
           - books: list[{title, author, key}]
         Intended for host-side "already read" filtering.
-        Requires env GOODREADS_USER_ID.
+        Uses provided user_id or defaults to GOODREADS_USER_ID (or fallback default).
         """
-        user_id = _env_required("GOODREADS_USER_ID")
+        user_id = _resolve_user_id(user_id)
 
         key_set: set[str] = set()
         books: List[Dict[str, str]] = []

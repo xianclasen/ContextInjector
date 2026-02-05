@@ -60,7 +60,10 @@ Example `.env`:
 OPENAI_API_KEY=your-openai-api-key
 
 # Goodreads settings
+# Optional: if GOODREADS_USER_ID is unset, the server falls back to
+# GOODREADS_DEFAULT_USER_ID (or the built-in default shown below).
 GOODREADS_USER_ID=182366515
+GOODREADS_DEFAULT_USER_ID=182366515
 GOODREADS_USER_AGENT=ContextInjector/1.0
 GOODREADS_HTTP_TIMEOUT_SECONDS=10
 
