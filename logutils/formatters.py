@@ -19,6 +19,7 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             base["exc_info"] = self.formatException(record.exc_info)
 
+        # Stuff to omit from logging extras
         skip = {
             "name",
             "msg",
@@ -46,7 +47,7 @@ class JsonFormatter(logging.Formatter):
                 continue
             base[k] = _json_safe(v)
 
-        # Pretty-print for terminals, compact JSON for non-TTY (e.g. files/aggregators)
+        # Pretty-print for terminals, otherwise use compact JSON
         is_tty = False
         try:
             is_tty = sys.stderr.isatty()
@@ -80,6 +81,7 @@ class HumanFormatter(logging.Formatter):
         msg = record.getMessage()
         base = f"{ts} {color}{level:<8}{reset} {record.name}: {msg}"
 
+        # Stuff to omit from logging extras
         skip = {
             "name",
             "msg",
@@ -123,6 +125,7 @@ class HumanFormatter(logging.Formatter):
 
 
 def _json_safe(value: Any) -> Any:
+    """Convert to a JSON-serializable form."""
     if value is None:
         return None
     if isinstance(value, (str, int, float, bool, list, dict)):

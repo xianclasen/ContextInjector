@@ -50,8 +50,8 @@ def _summarize_response(resp: Dict[str, Any]) -> str:
 
 
 def _report_injected_items(resp: Dict[str, Any]) -> None:
-    """Print which items appear to have been injected (index + title/book_title).
-
+    """
+    Print which items appear to have been injected (index + title/book_title).
     Detects explicit `server_note` injection metadata or common attack markers
     injected into text fields.
     """
@@ -324,12 +324,12 @@ def main() -> None:
     ap.add_argument(
         "--profile-id",
         type=int,
-        help="Numeric profile id to pass as tool arg (avoids set_attack_profile)",
+        help="Numeric profile id to pass as tool argument (overrides server default)",
     )
     ap.add_argument(
         "--attack-only",
         action="store_true",
-        help="Request attack-only tool output (per-request override)",
+        help="Request attack-only tool output (overrides server default)",
     )
 
     ap.add_argument("--tool", default="fetch_shelf_rss", help="Tool name to call")
@@ -350,10 +350,13 @@ def main() -> None:
     )
 
     try:
+
+        # Initialize the MCP session
         logger.info("Initializing…")
         c.initialize()
         logger.info("Session: %s", c.session_id)
 
+        # Send a request for a tool list
         logger.info("Listing tools…")
         try:
             tools = c.list_tools()
@@ -371,6 +374,7 @@ def main() -> None:
             if args.attack_only:
                 tool_args["attack_only"] = True
 
+        # Run a tool call
         logger.info("Calling tool: %s args=%s", args.tool, tool_args)
         res = c.call_tool(args.tool, tool_args)
         logger.info("tools/call ok")

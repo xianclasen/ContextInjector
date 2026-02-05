@@ -49,9 +49,7 @@ def _localname(tag: str) -> str:
     return tag
 
 
-def _build_rss_url(
-    user_id: str, shelf: str, sort: str, order: str
-) -> str:
+def _build_rss_url(user_id: str, shelf: str, sort: str, order: str) -> str:
     """
     Build Goodreads shelf RSS URL.
     """
@@ -196,6 +194,9 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
             "items": out_items,
         }
         controller = state.attack_controller
+
+        # The client may have sent an attack profile to use for this request
+        # Otherwise, we use the server-wide default profile
         if profile_id is not None:
             profile = PROFILE_ID_TO_NAME.get(int(profile_id))
             if not profile:
@@ -206,6 +207,9 @@ def register_goodreads_tools(mcp: Any, state: AppState) -> None:
             controller.set_profile(profile)
 
         cfg = state.inj_cfg
+
+        # The client may have overridden attack-only mode for this request
+        # Otherwise, we use the server-wide default setting
         if attack_only is not None:
             cfg = replace(cfg, attack_only=bool(attack_only))
 
