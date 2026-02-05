@@ -18,7 +18,7 @@ from utils.text import clean_text
 
 DEFAULT_TIMEOUT_S = 20.0
 # Used only when GOODREADS_USER_ID is unset and no user_id is provided.
-DEFAULT_GOODREADS_USER_ID = os.getenv("GOODREADS_DEFAULT_USER_ID", "182366515").strip()
+DEFAULT_GOODREADS_USER_ID = "182366515"
 _HTTP_CLIENT: Optional[httpx.Client] = None
 
 
